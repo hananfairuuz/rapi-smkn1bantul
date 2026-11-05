@@ -789,7 +789,10 @@ th {
 }
 
 .login-card .alert {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 13.5px;
 }
 
 @media (max-width: 760px) {
@@ -851,7 +854,7 @@ th {
 .login-layout {
     grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
     width: min(1120px, 100%);
-    min-height: min(76vh, 720px);
+    min-height: 600px;
     overflow: hidden;
     border: 1px solid rgb(255 255 255 / 24%);
     border-radius: 30px;
@@ -924,7 +927,10 @@ th {
 }
 
 .login-panel {
-    padding: clamp(32px, 5vw, 68px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px clamp(28px, 4.5vw, 60px);
     background: #111d33;
 }
 
@@ -939,7 +945,7 @@ th {
 
 .login-heading {
     align-items: flex-start;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
 }
 
 .login-heading h2 {
@@ -980,7 +986,7 @@ th {
 }
 
 .login-card .password-field {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 .login-card .password-toggle,
@@ -1019,7 +1025,7 @@ th {
 }
 
 .login-card .auth-foot {
-    margin-top: 22px;
+    margin-top: 16px;
     color: #9aacc4;
 }
 

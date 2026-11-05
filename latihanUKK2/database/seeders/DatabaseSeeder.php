@@ -25,13 +25,25 @@ class DatabaseSeeder extends Seeder
             'organisasi' => 'Organisasi siswa yang dapat mengajukan agenda dan melaporkan kerusakan.',
         ])->map(fn ($description, $name) => Role::firstOrCreate(['name' => $name], ['description' => $description]));
 
-        if (! app()->environment(['local', 'testing'])) {
-            return;
-        }
-
-        $users = ['admin' => ['Admin RAPI', 'admin@rapi.test', '628111111111'], 'pic' => ['PIC Ruang', 'pic@rapi.test', '628222222222'], 'guru' => ['Guru RAPI', 'guru@rapi.test', '628333333333'], 'organisasi' => ['Organisasi RAPI', 'organisasi@rapi.test', '628444444444']];
+        $users = [
+            'admin' => ['Admin RAPI', 'admin@rapi.test', '628111111111'],
+            'pic' => ['PIC Ruang', 'pic@rapi.test', '628222222222'],
+            'guru' => ['Guru RAPI', 'guru@rapi.test', '628333333333'],
+            'organisasi' => ['Organisasi RAPI', 'organisasi@rapi.test', '628444444444'],
+            'hanan' => ['Hanan Musyaffa', 'hananmusyaffa@gmail.com', '628111111111'],
+        ];
         foreach ($users as $role => $data) {
-            User::firstOrCreate(['email' => $data[1]], ['name' => $data[0], 'password' => Hash::make('password123'), 'role_id' => $roles[$role]->id, 'whatsapp' => $data[2]]);
+            $roleKey = $role === 'hanan' ? 'admin' : $role;
+            User::firstOrCreate(
+                ['email' => $data[1]],
+                [
+                    'name' => $data[0],
+                    'password' => Hash::make('password123'),
+                    'role_id' => $roles[$roleKey]->id,
+                    'whatsapp' => $data[2],
+                    'email_verified_at' => now(),
+                ]
+            );
         }
         Room::firstOrCreate(['name' => 'Laboratorium Komputer'], ['location' => 'Gedung A Lt. 2', 'description' => 'Ruang praktik komputer', 'pic_id' => User::where('email', 'pic@rapi.test')->value('id')]);
     }
