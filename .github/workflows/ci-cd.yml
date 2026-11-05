@@ -135,12 +135,12 @@ jobs:
           FTP_PASS: ${{ secrets.CPANEL_FTP_PASSWORD }}
           FTP_PATH: ${{ secrets.CPANEL_FTP_PATH || 'rapi_app' }}
         run: |
-          test -n "$FTP_HOST"
-          test -n "$FTP_USER"
-          test -n "$FTP_PASS"
+          if [ -z "$FTP_HOST" ]; then echo "ERROR: Secret CPANEL_FTP_HOST belum diset di GitHub Secrets!" >&2; exit 1; fi
+          if [ -z "$FTP_USER" ]; then echo "ERROR: Secret CPANEL_FTP_USER belum diset di GitHub Secrets!" >&2; exit 1; fi
+          if [ -z "$FTP_PASS" ]; then echo "ERROR: Secret CPANEL_FTP_PASSWORD belum diset di GitHub Secrets!" >&2; exit 1; fi
 
-          echo "Uploading release.zip to DomaiNesia FTPS..."
-          curl --ssl-reqd --ftp-create-dirs \
+          echo "Uploading release.zip to DomaiNesia FTPS at $FTP_HOST..."
+          curl -k --ftp-ssl --ftp-pasv --ftp-create-dirs \
             --user "$FTP_USER:$FTP_PASS" \
             -T release/release.zip \
             "ftp://$FTP_HOST/$FTP_PATH/release.zip"
@@ -153,7 +153,7 @@ jobs:
           WEB_ROOT_PATH: ${{ secrets.CPANEL_WEB_ROOT || 'public_html' }}
         run: |
           echo "Uploading deploy-hook.php to web root ($WEB_ROOT_PATH)..."
-          curl --ssl-reqd --ftp-create-dirs \
+          curl -k --ftp-ssl --ftp-pasv --ftp-create-dirs \
             --user "$FTP_USER:$FTP_PASS" \
             -T latihanUKK2/public/deploy-hook.php \
             "ftp://$FTP_HOST/$WEB_ROOT_PATH/deploy-hook.php"
@@ -163,7 +163,7 @@ jobs:
           DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
           APP_URL: ${{ vars.APP_PRODUCTION_URL || 'https://rapi-smkn1bantul.web.id' }}
         run: |
-          test -n "$DEPLOY_SECRET_KEY"
+          if [ -z "$DEPLOY_SECRET_KEY" ]; then echo "ERROR: Secret DEPLOY_SECRET_KEY belum diset di GitHub Secrets!" >&2; exit 1; fi
           echo "Calling deployment webhook at $APP_URL/deploy-hook.php..."
 
           RESPONSE=$(curl -s -k -w "\nHTTP_STATUS:%{http_code}" -X POST \
