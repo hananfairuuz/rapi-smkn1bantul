@@ -118,7 +118,7 @@ jobs:
     needs: [backend, mobile]
     if: >-
       ${{
-        vars.CPANEL_DEPLOY_ENABLED == 'true' &&
+        (vars.CPANEL_DEPLOY_ENABLED == 'true' || secrets.CPANEL_DEPLOY_ENABLED == 'true') &&
         (github.event_name == 'push' || inputs.deploy_production) &&
         (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
       }}
@@ -166,7 +166,7 @@ jobs:
       - name: Trigger automatic extraction, migrations, and caching
         env:
           DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
-          APP_URL: ${{ vars.APP_PRODUCTION_URL || 'https://rapi-smkn1bantul.web.id' }}
+          APP_URL: ${{ vars.APP_PRODUCTION_URL || secrets.APP_PRODUCTION_URL || 'https://rapi-smkn1bantul.web.id' }}
         run: |
           test -n "$DEPLOY_SECRET_KEY"
           echo "Calling deployment webhook at $APP_URL/deploy-hook.php..."
