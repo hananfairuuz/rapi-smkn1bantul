@@ -165,7 +165,7 @@ jobs:
 
       - name: Trigger automatic extraction, migrations, and caching
         env:
-          DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
+          DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY || secrets['DEPLOY_SECRET KEY'] }}
           APP_URL: ${{ vars.APP_PRODUCTION_URL || secrets.APP_PRODUCTION_URL || 'https://rapi-smkn1bantul.web.id' }}
         run: |
           test -n "$DEPLOY_SECRET_KEY"
