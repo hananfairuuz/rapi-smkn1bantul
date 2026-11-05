@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::dropIfExists('account_verification_codes');
+    }
+
+    public function down(): void
+    {
+        Schema::create('account_verification_codes', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('code');
+            $table->unsignedTinyInteger('attempts')->default(0);
+            $table->timestamp('expires_at');
+            $table->timestamps();
+        });
+    }
+};

@@ -1,0 +1,4 @@
+storeFile=app/rapi-release-key.jks
+storePassword=REPLACE_WITH_KEYSTORE_PASSWORD
+keyAlias=rapi
+keyPassword=REPLACE_WITH_KEY_PASSWORD

@@ -1,0 +1,190 @@
+name: CI/CD (DomaiNesia Nimbus One)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      deploy_production:
+        description: Deploy the selected main/master branch to production
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    name: Test Laravel and build assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: bcmath, ctype, fileinfo, gd, intl, mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, zip
+          coverage: none
+
+      - name: Install PHP dependencies
+        working-directory: latihanUKK2
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Configure test environment
+        working-directory: latihanUKK2
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run Laravel tests
+        working-directory: latihanUKK2
+        run: php artisan test
+
+      - name: Install production PHP dependencies
+        working-directory: latihanUKK2
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build Laravel frontend
+        working-directory: latihanUKK2
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Package backend for deployment
+        working-directory: latihanUKK2
+        run: |
+          mkdir -p ../backend-package
+          rsync -a \
+            --exclude='.env*' \
+            --exclude='storage/' \
+            --exclude='public/storage' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='.git/' \
+            --exclude='phpunit.xml' \
+            ./ ../backend-package/
+          cd ../backend-package
+          zip -qr ../release.zip .
+
+      - name: Upload backend release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-release
+          path: release.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  mobile:
+    name: Analyze and test Flutter app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: rapi_mobile
+        run: flutter pub get
+
+      - name: Analyze Flutter app
+        working-directory: rapi_mobile
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        working-directory: rapi_mobile
+        run: flutter test
+
+  deploy:
+    name: Deploy to DomaiNesia via FTPS & Webhook
+    needs: [backend, mobile]
+    if: >-
+      ${{
+        vars.CPANEL_DEPLOY_ENABLED == 'true' &&
+        (github.event_name == 'push' || inputs.deploy_production) &&
+        (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Download backend release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-release
+          path: release
+
+      - name: Upload release archive to DomaiNesia via FTPS
+        env:
+          FTP_HOST: ${{ secrets.CPANEL_FTP_HOST }}
+          FTP_USER: ${{ secrets.CPANEL_FTP_USER }}
+          FTP_PASS: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          FTP_PATH: ${{ secrets.CPANEL_FTP_PATH || 'rapi_app' }}
+        run: |
+          test -n "$FTP_HOST"
+          test -n "$FTP_USER"
+          test -n "$FTP_PASS"
+
+          echo "Uploading release.zip to DomaiNesia FTPS..."
+          curl --ssl-reqd --ftp-create-dirs \
+            --user "$FTP_USER:$FTP_PASS" \
+            -T release/release.zip \
+            "ftp://$FTP_HOST/$FTP_PATH/release.zip"
+
+      - name: Ensure deploy-hook.php is synchronized to web root
+        env:
+          FTP_HOST: ${{ secrets.CPANEL_FTP_HOST }}
+          FTP_USER: ${{ secrets.CPANEL_FTP_USER }}
+          FTP_PASS: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          WEB_ROOT_PATH: ${{ secrets.CPANEL_WEB_ROOT || 'public_html' }}
+        run: |
+          echo "Uploading deploy-hook.php to web root ($WEB_ROOT_PATH)..."
+          curl --ssl-reqd --ftp-create-dirs \
+            --user "$FTP_USER:$FTP_PASS" \
+            -T latihanUKK2/public/deploy-hook.php \
+            "ftp://$FTP_HOST/$WEB_ROOT_PATH/deploy-hook.php"
+
+      - name: Trigger automatic extraction, migrations, and caching
+        env:
+          DEPLOY_SECRET_KEY: ${{ secrets.DEPLOY_SECRET_KEY }}
+          APP_URL: ${{ vars.APP_PRODUCTION_URL || 'https://rapi-smkn1bantul.web.id' }}
+        run: |
+          test -n "$DEPLOY_SECRET_KEY"
+          echo "Calling deployment webhook at $APP_URL/deploy-hook.php..."
+
+          RESPONSE=$(curl -s -k -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "X-Deploy-Key: $DEPLOY_SECRET_KEY" \
+            "$APP_URL/deploy-hook.php")
+
+          HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | sed -e '/HTTP_STATUS/d')
+
+          echo "Server HTTP Status: $HTTP_CODE"
+          echo "Server Response Output:"
+          echo "$BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ] || [[ "$BODY" != *"\"success\": true"* && "$BODY" != *"\"success\":true"* ]]; then
+            echo "Deploy hook failed or returned non-200 status!" >&2
+            exit 1
+          fi
+
+          echo "CI/CD deployment finished successfully!"

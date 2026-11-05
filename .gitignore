@@ -1,0 +1,44 @@
+# Root gitignore for ukk_rapi workspace
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.log
+
+# Laravel Backend (latihanUKK2)
+latihanUKK2/.env
+latihanUKK2/.env.backup
+latihanUKK2/.env.production
+latihanUKK2/.phpunit.result.cache
+latihanUKK2/.phpunit.cache/
+latihanUKK2/vendor/
+latihanUKK2/node_modules/
+latihanUKK2/public/storage
+latihanUKK2/public/build/
+latihanUKK2/public/hot
+latihanUKK2/storage/*.key
+latihanUKK2/storage/framework/cache/data/*
+latihanUKK2/storage/framework/sessions/*
+latihanUKK2/storage/framework/views/*
+latihanUKK2/storage/logs/*
+
+# Flutter Mobile (rapi_mobile)
+rapi_mobile/.dart_tool/
+rapi_mobile/.flutter-plugins
+rapi_mobile/.flutter-plugins-dependencies
+rapi_mobile/.pub-cache/
+rapi_mobile/.pub/
+rapi_mobile/build/
+rapi_mobile/android/.gradle/
+rapi_mobile/android/local.properties
+rapi_mobile/android/key.properties
+rapi_mobile/android/app/build/
+rapi_mobile/android/app/*.jks
+rapi_mobile/android/app/*.keystore
+rapi_mobile/ios/.symlinks/
+rapi_mobile/ios/Flutter/Flutter.framework
+rapi_mobile/ios/Flutter/Flutter.podspec
+rapi_mobile/ios/Pods/
