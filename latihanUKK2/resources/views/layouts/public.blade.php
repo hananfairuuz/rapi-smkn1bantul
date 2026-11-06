@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'RAPI-Sekolah · SMK Negeri 1 Bantul')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/school-logo.png') }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : 3 }}">
-    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}?v={{ file_exists(public_path('css/public-pages.css')) ? filemtime(public_path('css/public-pages.css')) : 3 }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : 4 }}">
+    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}?v={{ file_exists(public_path('css/public-pages.css')) ? filemtime(public_path('css/public-pages.css')) : 4 }}">
 </head>
 <body class="public-page-body">
 <header class="public-header">
     <div class="public-brand">
         <a href="{{ route('calendar') }}" class="public-brand-link">
-            <img src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul" width="36" height="36" style="width: 36px; height: 36px; object-fit: contain;">
+            <img src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul" width="42" height="42" style="width: 42px; height: 42px; object-fit: contain;">
             <div>
                 <h1>RAPI-Sekolah</h1>
                 <p>Sistem Pengelolaan Infrastruktur & Agenda Ruangan</p>

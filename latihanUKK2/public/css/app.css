@@ -187,18 +187,18 @@ th { color: var(--muted); font-size: 11px; letter-spacing: .05em; text-transform
 .calendar-grid .calendar-event--organisasi { color: #1e3a8a; background: #dbeafe; }
 .calendar-grid .calendar-event--admin { color: #713f12; background: #fef08a; }
 .calendar-grid .calendar-event--holiday { color: #991b1b !important; background: #fee2e2 !important; border: 1px solid #fca5a5 !important; border-left: 3px solid #dc2626 !important; }
-.public-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 28px; color: #fff; background: #091931; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-.public-brand { display: flex; align-items: center; gap: 10px; border: none; padding: 0; background: transparent; }
-.public-brand img { flex: 0 0 36px; width: 36px; height: 36px; object-fit: contain; }
-.public-header h1 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; color: #ffffff; }
-.public-header p { margin: 1px 0 0; font-size: 11px; color: #94a3b8; line-height: 1.2; }
+.public-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 36px; color: #fff; background: #091931; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.public-brand { display: flex; align-items: center; gap: 12px; border: none; padding: 0; background: transparent; }
+.public-brand img { flex: 0 0 42px; width: 42px; height: 42px; object-fit: contain; }
+.public-header h1 { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.25; letter-spacing: -0.01em; color: #ffffff; }
+.public-header p { margin: 2px 0 0; font-size: 12px; color: #94a3b8; line-height: 1.25; }
 .public-header a { text-decoration: none; }
-.public-header .public-brand-link, .public-brand a { border: none !important; outline: none !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; display: flex !important; align-items: center !important; gap: 10px !important; color: #ffffff !important; }
+.public-header .public-brand-link, .public-brand a { border: none !important; outline: none !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; display: flex !important; align-items: center !important; gap: 12px !important; color: #ffffff !important; }
 .public-header .public-brand-link:hover { border: none !important; background: transparent !important; opacity: 0.95; }
-.public-header .public-login-button { padding: 6px 18px; border: 1px solid #f59e0b; border-radius: 7px; color: #0f172a; background: #f59e0b; font-weight: 750; font-size: 13px; text-decoration: none; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); }
+.public-header .public-login-button { padding: 8px 20px; border: 1px solid #f59e0b; border-radius: 8px; color: #0f172a; background: #f59e0b; font-weight: 750; font-size: 13.5px; text-decoration: none; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); }
 .public-header .public-login-button:hover { border-color: #d97706; background: #d97706; color: #ffffff; }
-.public-nav { display: flex; align-items: center; gap: 6px; }
-.public-header .public-nav-link { border: 1px solid transparent; padding: 6px 14px; border-radius: 7px; color: #cbd5e1; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s ease; background: transparent; line-height: 1.4; }
+.public-nav { display: flex; align-items: center; gap: 8px; }
+.public-header .public-nav-link { border: 1px solid transparent; padding: 8px 16px; border-radius: 8px; color: #cbd5e1; font-size: 13.5px; font-weight: 600; text-decoration: none; transition: all 0.2s ease; background: transparent; line-height: 1.4; }
 .public-header .public-nav-link:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
 .public-header .public-nav-link.active { color: #ffffff; background: #16243a; border-color: rgba(255, 255, 255, 0.12); font-weight: 700; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
 .public-main { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
