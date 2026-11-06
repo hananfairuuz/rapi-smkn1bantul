@@ -12,22 +12,14 @@
 </head>
 <body>
 <div class="app-shell">
-    <!-- Backdrop for mobile sidebar -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
     <aside class="sidebar">
         <div class="sidebar-header">
             <a class="sidebar-brand" href="{{ route('dashboard') }}">
                 <img class="sidebar-logo" src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul">
                 <span class="sidebar-brand-copy"><strong>RAPI-Sekolah</strong><span class="sidebar-subtitle">Manajemen Infrastruktur</span></span>
             </a>
-            <!-- Desktop collapse -->
-            <button class="sidebar-toggle sidebar-toggle-desktop" type="button" aria-label="Kecilkan menu samping" aria-expanded="true" title="Kecilkan menu samping">
+            <button class="sidebar-toggle" type="button" aria-label="Kecilkan menu samping" aria-expanded="true" title="Kecilkan menu samping">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
-            </button>
-            <!-- Mobile close -->
-            <button class="sidebar-close-btn" id="sidebarCloseBtn" type="button" aria-label="Tutup menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
         <nav class="sidebar-nav">
@@ -84,12 +76,7 @@
     </aside>
     <div class="main-area">
         <header class="topbar">
-            <!-- Mobile hamburger -->
-            <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Buka navigasi">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
             <div class="topbar-title">@yield('topbar', 'Sistem RAPI-Sekolah')</div>
-            <div class="topbar-brand-mobile">RAPI-Sekolah</div>
             <div class="profile"><span class="avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ match(auth()->user()->role?->name) {'admin' => 'Waka / Admin', 'pic' => 'PIC Ruang', 'guru' => 'Guru', 'organisasi' => 'Organisasi', default => 'Pengguna'} }}</small></div></div>
         </header>
         <main class="page-content">
@@ -99,76 +86,21 @@
         </main>
     </div>
 </div>
-
-<!-- Mobile Bottom Nav (after login) -->
-<nav class="app-bottom-nav">
-    <a class="abn-item {{ request()->routeIs('dashboard') ? 'abn-active' : '' }}" href="{{ route('dashboard') }}">
-        <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
-        <span>Beranda</span>
-    </a>
-    @if(in_array(auth()->user()->role?->name, ['admin','guru','organisasi']))
-    <a class="abn-item {{ request()->routeIs('events.*') ? 'abn-active' : '' }}" href="{{ route('events.index') }}">
-        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M12 12.5v3l2 1.2M12 12.5a3 3 0 1 0 3 3"/></svg>
-        <span>Agenda</span>
-    </a>
-    @endif
-    <a class="abn-item {{ request()->routeIs('calendar') ? 'abn-active' : '' }}" href="{{ route('calendar') }}">
-        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01"/></svg>
-        <span>Kalender</span>
-    </a>
-    @if(in_array(auth()->user()->role?->name, ['admin','pic','guru','organisasi']))
-    <a class="abn-item {{ request()->routeIs('rooms.*') ? 'abn-active' : '' }}" href="{{ route('rooms.index') }}">
-        <svg viewBox="0 0 24 24"><path d="M4 20.5V5.8a1.8 1.8 0 0 1 1.3-1.7l11-3A1.8 1.8 0 0 1 18.5 2.8v17.7M2.5 20.5h19"/></svg>
-        <span>Ruangan</span>
-    </a>
-    @endif
-    <a class="abn-item {{ request()->routeIs('complaints.*') ? 'abn-active' : '' }}" href="{{ route('complaints.index') }}">
-        <svg viewBox="0 0 24 24"><path d="M12 3.5 21 20H3L12 3.5Z"/><path d="M12 9v4.5M12 17h.01"/></svg>
-        <span>Pengaduan</span>
-    </a>
-    <button class="abn-item" id="abnMenuBtn" type="button">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        <span>Menu</span>
-    </button>
-</nav>
-
 <script>
     const appShell = document.querySelector('.app-shell');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
 
-    // Desktop sidebar toggle
-    const desktopToggle = document.querySelector('.sidebar-toggle-desktop');
-    if (desktopToggle) {
-        desktopToggle.addEventListener('click', () => {
-            const collapsed = appShell.classList.toggle('sidebar-collapsed');
-            const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
-            desktopToggle.innerHTML = collapsed
-                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
-                : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
-            desktopToggle.setAttribute('aria-expanded', String(!collapsed));
-            desktopToggle.setAttribute('aria-label', label);
-            desktopToggle.title = label;
-        });
-    }
+    sidebarToggle.addEventListener('click', () => {
+        const collapsed = appShell.classList.toggle('sidebar-collapsed');
+        const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
 
-    // Mobile sidebar
-    function openSidebar() {
-        appShell.classList.add('mobile-open');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeSidebar() {
-        appShell.classList.remove('mobile-open');
-        document.body.style.overflow = '';
-    }
-
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-    const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
-    const abnMenuBtn = document.getElementById('abnMenuBtn');
-
-    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
-    if (abnMenuBtn) abnMenuBtn.addEventListener('click', openSidebar);
-    if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
-    if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+        sidebarToggle.innerHTML = collapsed
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
+        sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+        sidebarToggle.setAttribute('aria-label', label);
+        sidebarToggle.title = label;
+    });
 </script>
 </body>
 </html>
