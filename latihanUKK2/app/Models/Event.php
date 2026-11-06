@@ -10,7 +10,7 @@ class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'room_id', 'title', 'borrower_name', 'borrower_whatsapp', 'description', 'date', 'end_date', 'start_time', 'end_time', 'status', 'move_reason', 'rejection_reason'];
+    protected $fillable = ['user_id', 'room_id', 'booking_group_id', 'title', 'borrower_name', 'borrower_whatsapp', 'description', 'date', 'end_date', 'start_time', 'end_time', 'status', 'move_reason', 'rejection_reason'];
 
     protected function casts(): array
     {

@@ -393,19 +393,49 @@ class MobileApiController extends Controller
     {
         $user = $request->user();
         $role = $user->role->name;
-        abort_unless(in_array($role, ['guru', 'organisasi']), 403);
+        abort_unless(in_array($role, ['guru', 'organisasi', 'admin']), 403);
+        $isAdmin = $role === 'admin';
+
+        $rawRoomIds = $request->input('room_ids');
+        if (is_string($rawRoomIds)) {
+            $decoded = json_decode($rawRoomIds, true);
+            $rawRoomIds = is_array($decoded) ? $decoded : explode(',', $rawRoomIds);
+        }
+        $roomIds = collect($rawRoomIds ?? [])
+            ->map(fn($id) => (int) trim((string) $id))
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($roomIds) && $request->filled('room_id')) {
+            $roomIds = [(int) $request->input('room_id')];
+        }
+
+        $request->merge(['room_ids' => $roomIds]);
+
+        $dateRules = ['required', 'date_format:Y-m-d'];
+        if (! $isAdmin) {
+            $dateRules[] = 'after_or_equal:'.now('Asia/Jakarta')->addDay()->toDateString();
+        }
+
         $data = $request->validate([
-            'room_id' => ['required', 'exists:rooms,id'],
+            'room_ids' => ['required', 'array', 'min:1'],
+            'room_ids.*' => ['exists:rooms,id'],
             'title' => ['required', 'string', 'max:255'],
             'borrower_name' => ['required', 'string', 'max:255'],
             'borrower_whatsapp' => ['required', 'string', 'regex:/^\+?[0-9]{8,20}$/'],
             'description' => ['nullable', 'string'],
-            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.now('Asia/Jakarta')->addDay()->toDateString()],
+            'date' => $dateRules,
             'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date'],
             'start_lesson' => ['required', 'in:custom,1,2,3,4,5,6,7,8,9,10,11,12,13,14'],
             'end_lesson' => ['required', 'in:custom,1,2,3,4,5,6,7,8,9,10,11,12,13,14'],
             'start_custom_time' => ['required_if:start_lesson,custom', 'nullable', 'date_format:H:i'],
             'end_custom_time' => ['required_if:end_lesson,custom', 'nullable', 'date_format:H:i'],
+        ], [
+            'room_ids.required' => 'Pilih minimal satu ruangan yang akan dipinjam.',
+            'room_ids.min' => 'Pilih minimal satu ruangan yang akan dipinjam.',
+            'date.after_or_equal' => 'Peminjaman ruangan hanya dapat diajukan paling lambat H-1 sebelum digunakan.',
         ]);
         $endDate = $data['end_date'] ?? $data['date'];
         $multiDay = $endDate !== $data['date'];
@@ -430,19 +460,56 @@ class MobileApiController extends Controller
             throw ValidationException::withMessages(['end_lesson' => 'Jam selesai harus setelah jam mulai dan paling lambat pukul 06.00 hari berikutnya.']);
         }
 
-        $this->ensureNoEventCollision($data['room_id'], $data['date'], $endDate, $startTime, $endTime);
-        $event = Event::create([
-            ...$data,
-            'end_date' => $endDate !== $data['date'] ? $endDate : null,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'user_id' => $user->id,
-            'status' => 'pending',
-        ])->load(['room:id,name', 'user:id,name']);
+        $validRooms = Room::whereIn('id', $roomIds)->get()->keyBy('id');
+        $collidingRooms = [];
+        foreach ($roomIds as $rId) {
+            try {
+                $this->ensureNoEventCollision($rId, $data['date'], $endDate, $startTime, $endTime);
+            } catch (ValidationException $e) {
+                $collidingRooms[] = $validRooms[$rId]->name ?? "Ruangan #$rId";
+            }
+        }
+
+        if (!empty($collidingRooms)) {
+            throw ValidationException::withMessages([
+                'room_ids' => 'Jadwal bertabrakan dengan agenda lain pada ruangan: ' . implode(', ', $collidingRooms) . '.',
+            ]);
+        }
+
+        $bookingGroupId = count($roomIds) > 1 ? (string) \Illuminate\Support\Str::uuid() : null;
+        $hasGroupCol = \Illuminate\Support\Facades\Schema::hasColumn('events', 'booking_group_id');
+        $createdEvents = [];
+
+        foreach ($roomIds as $rId) {
+            $eventPayload = [
+                ...$data,
+                'room_id' => $rId,
+                'end_date' => $endDate !== $data['date'] ? $endDate : null,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'user_id' => $user->id,
+                'status' => $isAdmin ? 'approved' : 'pending',
+            ];
+            unset($eventPayload['room_ids']);
+            if ($bookingGroupId && $hasGroupCol) {
+                $eventPayload['booking_group_id'] = $bookingGroupId;
+            }
+            $created = Event::create($eventPayload)->load(['room:id,name', 'user:id,name']);
+            $createdEvents[] = $created;
+        }
+
+        $message = count($createdEvents) > 1
+            ? ($isAdmin
+                ? count($createdEvents) . ' ruangan berhasil dibooking dan langsung disetujui.'
+                : count($createdEvents) . ' ruangan berhasil diajukan dan menunggu persetujuan.')
+            : ($isAdmin
+                ? 'Agenda berhasil dibuat dan langsung disetujui.'
+                : 'Agenda diajukan dan menunggu persetujuan.');
 
         return response()->json([
-            'message' => 'Agenda diajukan dan menunggu persetujuan.',
-            'event' => $event,
+            'message' => $message,
+            'event' => $createdEvents[0],
+            'events' => $createdEvents,
         ], 201);
     }
 

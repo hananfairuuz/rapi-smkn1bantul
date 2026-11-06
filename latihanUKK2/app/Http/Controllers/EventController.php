@@ -91,15 +91,52 @@ class EventController extends Controller
         $this->canCreate();
         $isAdmin = auth()->user()->role?->name === 'admin';
         $data = $this->validated($request, $isAdmin);
-        $this->ensureNoCollision($data);
-        $data['user_id'] = auth()->id();
-        $data['status'] = $isAdmin ? 'approved' : 'pending';
-        Event::create($data);
+        $roomIds = $data['room_ids'] ?? [$data['room_id']];
 
-        return redirect()->route('events.index')->with(
-            'success',
-            $isAdmin ? 'Agenda berhasil dibuat dan langsung disetujui.' : 'Agenda diajukan dan menunggu persetujuan.'
-        );
+        // Periksa bentrok jadwal untuk setiap ruangan yang dipilih
+        $collidingRooms = [];
+        $validRooms = Room::whereIn('id', $roomIds)->get()->keyBy('id');
+        foreach ($roomIds as $rId) {
+            $testData = $data;
+            $testData['room_id'] = $rId;
+            try {
+                $this->ensureNoCollision($testData);
+            } catch (ValidationException $e) {
+                $collidingRooms[] = $validRooms[$rId]->name ?? "Ruangan #$rId";
+            }
+        }
+
+        if (!empty($collidingRooms)) {
+            throw ValidationException::withMessages([
+                'room_ids' => 'Jadwal bertabrakan dengan agenda lain pada ruangan: ' . implode(', ', $collidingRooms) . '.',
+            ]);
+        }
+
+        $bookingGroupId = count($roomIds) > 1 ? (string) \Illuminate\Support\Str::uuid() : null;
+        $hasGroupCol = \Illuminate\Support\Facades\Schema::hasColumn('events', 'booking_group_id');
+        $createdEvents = [];
+
+        foreach ($roomIds as $rId) {
+            $eventData = $data;
+            unset($eventData['room_ids']);
+            $eventData['room_id'] = $rId;
+            $eventData['user_id'] = auth()->id();
+            $eventData['status'] = $isAdmin ? 'approved' : 'pending';
+            if ($bookingGroupId && $hasGroupCol) {
+                $eventData['booking_group_id'] = $bookingGroupId;
+            }
+            $createdEvents[] = Event::create($eventData);
+        }
+
+        $msg = count($createdEvents) > 1
+            ? ($isAdmin
+                ? count($createdEvents) . ' ruangan berhasil dibooking dan langsung disetujui.'
+                : count($createdEvents) . ' ruangan berhasil diajukan dan menunggu persetujuan.')
+            : ($isAdmin
+                ? 'Agenda berhasil dibuat dan langsung disetujui.'
+                : 'Agenda diajukan dan menunggu persetujuan.');
+
+        return redirect()->route('events.index')->with('success', $msg);
     }
 
     public function edit(Event $event)
@@ -214,7 +251,8 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
     {
         $isAdmin = $request->user()->role?->name === 'admin';
         $rules = [
-            'room_id' => 'required|exists:rooms,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'room_ids' => 'nullable|string',
             'date' => 'required|date_format:Y-m-d',
             'start_lesson' => 'required|in:custom,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
             'end_lesson' => 'required|in:custom,1,2,3,4,5,6,7,8,9,10,11,12,13,14',
@@ -226,21 +264,66 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         $data = $request->validate($rules);
         $endDate = $data['end_date'] ?? $data['date'];
         $interval = $this->resolveInterval($data, $endDate !== $data['date']);
-        $events = $this->eventsOverlappingRange(
-            $data['room_id'],
-            $data['date'],
-            $endDate,
-            $data['ignore'] ?? null
-        );
-        $collision = $this->hasCollision($events, $data['date'], $endDate, $interval);
 
-        return response()->json(['events' => $events, 'collision' => $collision]);
+        $rawRoomIds = $request->input('room_ids');
+        $roomIds = [];
+        if ($rawRoomIds) {
+            $roomIds = array_filter(array_map('intval', explode(',', (string) $rawRoomIds)));
+        }
+        if (empty($roomIds) && !empty($data['room_id'])) {
+            $roomIds = [(int) $data['room_id']];
+        }
+
+        $allEvents = [];
+        $collisionRooms = [];
+        $validRooms = Room::whereIn('id', $roomIds)->get()->keyBy('id');
+
+        foreach ($roomIds as $rId) {
+            $events = $this->eventsOverlappingRange(
+                $rId,
+                $data['date'],
+                $endDate,
+                $data['ignore'] ?? null
+            );
+            if ($this->hasCollision($events, $data['date'], $endDate, $interval)) {
+                $collisionRooms[] = $validRooms[$rId]->name ?? "Ruangan #$rId";
+            }
+            foreach ($events as $ev) {
+                $allEvents[] = $ev;
+            }
+        }
+
+        return response()->json([
+            'events' => $allEvents,
+            'collision' => !empty($collisionRooms),
+            'collision_rooms' => $collisionRooms,
+        ]);
     }
 
     private function validated(Request $request, bool $admin = false): array
     {
+        $rawRoomIds = $request->input('room_ids');
+        if (is_string($rawRoomIds)) {
+            $decoded = json_decode($rawRoomIds, true);
+            $rawRoomIds = is_array($decoded) ? $decoded : explode(',', $rawRoomIds);
+        }
+        $roomIds = collect($rawRoomIds ?? [])
+            ->map(fn($id) => (int) trim((string) $id))
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($roomIds) && $request->filled('room_id')) {
+            $roomIds = [(int) $request->input('room_id')];
+        }
+
+        $request->merge(['room_ids' => $roomIds]);
+
         $rules = [
-            'room_id' => 'required|exists:rooms,id',
+            'room_ids' => 'required|array|min:1',
+            'room_ids.*' => 'exists:rooms,id',
+            'room_id' => 'nullable|exists:rooms,id',
             'title' => 'required|string|max:255',
             'borrower_name' => 'required|string|max:255',
             'borrower_whatsapp' => ['required', 'string', 'regex:/^\\+?[0-9]{8,20}$/'],
@@ -261,6 +344,8 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         }
 
         $data = $request->validate($rules, [
+            'room_ids.required' => 'Pilih minimal satu ruangan yang akan dipinjam.',
+            'room_ids.min' => 'Pilih minimal satu ruangan yang akan dipinjam.',
             'date.after_or_equal' => 'Peminjaman ruangan hanya dapat diajukan paling lambat H-1 sebelum digunakan.',
             'start_custom_time.required_if' => 'Jam mulai bebas wajib diisi.',
             'end_custom_time.required_if' => 'Jam selesai bebas wajib diisi.',
@@ -271,6 +356,8 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         $data['start_time'] = $interval['start_time'];
         $data['end_time'] = $interval['end_time'];
         $data['end_date'] = $endDate !== $data['date'] ? $endDate : null;
+        $data['room_ids'] = $roomIds;
+        $data['room_id'] = $roomIds[0] ?? null;
         unset($data['start_lesson'], $data['end_lesson'], $data['start_custom_time'], $data['end_custom_time']);
 
         return $data;

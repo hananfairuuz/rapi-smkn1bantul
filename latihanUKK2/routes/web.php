@@ -20,7 +20,7 @@ Route::get('/panduan-apk', [CalendarController::class, 'guide'])->name('guide');
 Route::get('/download-apk', function () {
     $apkPath = public_path('downloads/rapi-mobile.apk');
     if (file_exists($apkPath)) {
-        return response()->download($apkPath, 'RAPI-Sekolah-v1.0.apk', [
+        return response()->download($apkPath, 'RAPI-Sekolah-v1.0.2.apk', [
             'Content-Type' => 'application/vnd.android.package-archive',
         ]);
     }
