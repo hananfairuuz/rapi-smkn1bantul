@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'RAPI-Sekolah')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/school-logo.png') }}?v={{ file_exists(public_path('images/school-logo.png')) ? filemtime(public_path('images/school-logo.png')) : time() }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     @if(request()->routeIs('events.*'))
         <link rel="stylesheet" href="{{ asset('css/events.css') }}">
