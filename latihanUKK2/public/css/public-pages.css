@@ -289,104 +289,138 @@
     transform: translateY(-2px);
 }
 
-/* Virtual Digital Card (Kanan Banner Foto 1) */
-.virtual-card-wrapper {
-    display: flex !important;
-    justify-content: center !important;
-}
-.virtual-card {
-    width: 100% !important;
-    max-width: 340px !important;
-    aspect-ratio: 1.58 / 1 !important;
-    border-radius: 18px !important;
-    padding: 22px 24px !important;
-    position: relative !important;
-    overflow: hidden !important;
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #6366f1 100%) !important;
+/* Panel Monitoring Layanan Sarpras (Kanan Banner Hero) */
+.hero-status-widget {
+    background: rgba(15, 23, 42, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 20px !important;
+    padding: 24px 26px !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+    backdrop-filter: blur(12px) !important;
+    box-sizing: border-box !important;
     color: #ffffff !important;
-    box-shadow: 0 18px 40px rgba(30, 64, 175, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+}
+.widget-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 12px !important;
+}
+.widget-live-indicator {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+.live-pulse-dot {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25) !important;
+}
+.live-status-text {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    color: #4ade80 !important;
+    text-transform: uppercase !important;
+}
+.widget-badge-online {
+    font-size: 10px !important;
+    font-weight: 750 !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0 !important;
+    padding: 3px 9px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.widget-title {
+    font-size: 18px !important;
+    font-weight: 850 !important;
+    color: #ffffff !important;
+    margin: 0 0 4px !important;
+    line-height: 1.3 !important;
+}
+.widget-subtitle {
+    font-size: 12.5px !important;
+    color: #94a3b8 !important;
+    margin: 0 0 16px !important;
+    line-height: 1.4 !important;
+}
+.widget-metric-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+}
+.widget-metric-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    transition: background 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+.widget-metric-item:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+}
+.metric-icon-wrap {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+.icon-blue-glow { background: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
+.icon-green-glow { background: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; }
+.icon-amber-glow { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; }
+.icon-purple-glow { background: rgba(168, 85, 247, 0.15) !important; color: #c084fc !important; }
+.metric-text-wrap {
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
-    box-sizing: border-box;
+    min-width: 0 !important;
 }
-.card-glass-glow {
-    position: absolute;
-    top: -60%;
-    left: -60%;
-    width: 220%;
-    height: 220%;
-    background: radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
-    pointer-events: none;
-}
-.card-top-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    z-index: 1;
-}
-.card-sublabel {
-    display: block !important;
-    font-size: 9.5px !important;
+.metric-val {
+    font-size: 12px !important;
     font-weight: 800 !important;
-    letter-spacing: 0.8px !important;
-    text-transform: uppercase !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-}
-.card-title {
-    font-size: 15px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.2px !important;
     color: #ffffff !important;
-}
-.card-chip-icon {
-    opacity: 0.85;
-}
-.card-mid-section {
-    z-index: 1;
-    margin: 10px 0 !important;
-}
-.card-code-label {
-    display: block !important;
-    font-size: 9px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.8px !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    margin-bottom: 4px !important;
-}
-.card-code-number {
-    font-family: 'Courier New', monospace, sans-serif !important;
-    font-size: 19px !important;
-    font-weight: 800 !important;
-    letter-spacing: 2px !important;
-    color: #ffffff !important;
-}
-.card-bottom-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-end !important;
-    z-index: 1;
-}
-.card-meta-label {
-    display: block !important;
-    font-size: 8.5px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.6px !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    line-height: 1.3 !important;
     margin-bottom: 2px !important;
 }
-.card-meta-val {
-    font-size: 12.5px !important;
-    font-weight: 800 !important;
-    color: #ffffff !important;
+.metric-lbl {
+    font-size: 10.5px !important;
+    color: #94a3b8 !important;
+    line-height: 1.3 !important;
 }
-.card-meta-badge {
-    font-size: 9.5px !important;
-    font-weight: 800 !important;
-    background: rgba(255, 255, 255, 0.2) !important;
-    padding: 3px 8px !important;
-    border-radius: 4px !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+.widget-footer-pill {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border: 1px solid rgba(56, 189, 248, 0.2) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 11px !important;
+    color: #bae6fd !important;
+    font-weight: 600 !important;
+}
+.footer-check-icon {
+    display: inline-flex !important;
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
 }
 
 /* 3 Info Cards (Bawah Hero Foto 1) */
