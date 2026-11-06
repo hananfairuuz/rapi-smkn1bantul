@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Masuk · RAPI-Sekolah</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/school-logo.png') }}?v={{ file_exists(public_path('images/school-logo.png')) ? filemtime(public_path('images/school-logo.png')) : time() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}?v={{ file_exists(public_path('images/favicon.png')) ? filemtime(public_path('images/favicon.png')) : time() }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body class="auth-page login-page">

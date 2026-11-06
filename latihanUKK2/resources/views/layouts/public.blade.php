@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'RAPI-Sekolah · SMK Negeri 1 Bantul')</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/school-logo.png') }}?v={{ file_exists(public_path('images/school-logo.png')) ? filemtime(public_path('images/school-logo.png')) : time() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}?v={{ file_exists(public_path('images/favicon.png')) ? filemtime(public_path('images/favicon.png')) : time() }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : 6 }}">
     <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}?v={{ file_exists(public_path('css/public-pages.css')) ? filemtime(public_path('css/public-pages.css')) : 6 }}">
 </head>
