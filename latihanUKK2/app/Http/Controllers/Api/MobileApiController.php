@@ -11,6 +11,7 @@ use App\Models\Room;
 use App\Models\SystemNotification;
 use App\Models\User;
 use App\Services\ComplaintPhotoStorage;
+use App\Services\IndonesiaHolidayCalendar;
 use App\Support\LessonSchedule;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -211,18 +212,39 @@ class MobileApiController extends Controller
         ]);
     }
 
-    public function calendar(Request $request)
+    public function calendar(Request $request, IndonesiaHolidayCalendar $holidayCalendar)
     {
-        $data = $request->validate(['month' => ['nullable', 'date_format:Y-m']]);
+        $data = $request->validate([
+            'month' => ['nullable', 'date_format:Y-m'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
         $month = isset($data['month'])
             ? CarbonImmutable::createFromFormat('Y-m', $data['month'])->startOfMonth()
             : today()->startOfMonth();
 
-        return response()->json([
-            'month' => $month->format('Y-m'),
-            'events' => Event::with(['room:id,name,location', 'user.role'])
-                ->where('status', 'approved')
-                ->whereDate('date', '<=', $month->endOfMonth())
+        $search = trim($data['search'] ?? '');
+
+        $holidays = [];
+        try {
+            $holidays = $holidayCalendar->holidaysForYear((int) $month->year);
+        } catch (\Throwable $e) {
+            $holidays = $holidayCalendar->getBuiltinHolidaysForYear((int) $month->year);
+        }
+
+        $eventsQuery = Event::with(['room:id,name,location', 'user.role'])
+            ->where('status', 'approved');
+
+        if ($search !== '') {
+            $eventsQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('room', function ($rq) use ($search) {
+                        $rq->where('name', 'like', "%{$search}%")
+                            ->orWhere('location', 'like', "%{$search}%");
+                    });
+            });
+        } else {
+            $eventsQuery->whereDate('date', '<=', $month->endOfMonth())
                 ->where(function ($query) use ($month) {
                     $monthStart = $month->startOfMonth();
                     $query->whereDate('end_date', '>=', $monthStart)
@@ -235,13 +257,19 @@ class MobileApiController extends Controller
                                 ->whereColumn('end_time', '<', 'start_time')
                                 ->whereDate('date', '>=', $monthStart->copy()->subDay());
                         });
-                })
-                ->orderBy('date')->orderBy('start_time')
-                ->get()
-                ->each(fn (Event $event) => $event->setAttribute(
-                    'organizer_role',
-                    $event->user?->role?->name
-                )),
+                });
+        }
+
+        $events = $eventsQuery->orderBy('date')->orderBy('start_time')->get()
+            ->each(fn (Event $event) => $event->setAttribute(
+                'organizer_role',
+                $event->user?->role?->name
+            ));
+
+        return response()->json([
+            'month' => $month->format('Y-m'),
+            'holidays' => $holidays,
+            'events' => $events,
         ]);
     }
 

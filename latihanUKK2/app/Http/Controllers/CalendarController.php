@@ -18,34 +18,45 @@ class CalendarController extends Controller
         $month = $request->filled('month') ? Carbon::createFromFormat('Y-m', $request->string('month')->toString())->startOfMonth() : today()->startOfMonth();
         $monthStart = $month->copy()->startOfMonth();
         $monthEnd = $month->copy()->endOfMonth();
-        $events = Event::with(['room', 'user.role'])
-            ->where('status', 'approved')
-            ->whereDate('date', '<=', $monthEnd)
-            ->where(function ($query) use ($monthStart) {
-                $query->whereDate('end_date', '>=', $monthStart)
-                    ->orWhere(function ($query) use ($monthStart) {
-                        $query->whereNull('end_date')
-                            ->whereDate('date', '>=', $monthStart);
-                    })
-                    ->orWhere(function ($query) use ($monthStart) {
-                        $query->whereNull('end_date')
-                            ->whereColumn('end_time', '<', 'start_time')
-                            ->whereDate('date', '>=', $monthStart->copy()->subDay());
+        $search = $request->string('search')->trim()->toString();
+
+        $eventsQuery = Event::with(['room', 'user.role'])
+            ->where('status', 'approved');
+
+        if ($search !== '') {
+            $eventsQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('room', function ($rq) use ($search) {
+                        $rq->where('name', 'like', "%{$search}%")
+                            ->orWhere('location', 'like', "%{$search}%");
                     });
-            })
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
+            });
+        } else {
+            $eventsQuery->whereDate('date', '<=', $monthEnd)
+                ->where(function ($query) use ($monthStart) {
+                    $query->whereDate('end_date', '>=', $monthStart)
+                        ->orWhere(function ($query) use ($monthStart) {
+                            $query->whereNull('end_date')
+                                ->whereDate('date', '>=', $monthStart);
+                        })
+                        ->orWhere(function ($query) use ($monthStart) {
+                            $query->whereNull('end_date')
+                                ->whereColumn('end_time', '<', 'start_time')
+                                ->whereDate('date', '>=', $monthStart->copy()->subDay());
+                        });
+                });
+        }
+
+        $events = $eventsQuery->orderBy('date')->orderBy('start_time')->get();
         $holidaysAvailable = true;
 
         try {
             $holidays = $holidayCalendar->holidaysForYear((int) $month->year);
-        } catch (ConnectionException|RequestException|UnexpectedValueException $exception) {
-            Log::warning('Unable to load Indonesia public holiday calendar.', ['exception' => $exception]);
-            $holidays = [];
-            $holidaysAvailable = false;
+        } catch (\Throwable $exception) {
+            $holidays = $holidayCalendar->getBuiltinHolidaysForYear((int) $month->year);
         }
 
-        return view($request->user() ? 'calendar' : 'calendar-public', compact('month', 'events', 'holidays', 'holidaysAvailable'));
+        return view($request->user() ? 'calendar' : 'calendar-public', compact('month', 'events', 'holidays', 'holidaysAvailable', 'search'));
     }
 }
