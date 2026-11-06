@@ -600,8 +600,6 @@ class _EventFormState extends State<EventForm> {
   String _endLesson = '2';
   TimeOfDay _startCustomTime = const TimeOfDay(hour: 17, minute: 45);
   TimeOfDay _endCustomTime = const TimeOfDay(hour: 6, minute: 0);
-  final _roomSearchController = TextEditingController();
-  String _roomSearchQuery = '';
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -625,7 +623,6 @@ class _EventFormState extends State<EventForm> {
     _description.dispose();
     _borrower.dispose();
     _whatsapp.dispose();
-    _roomSearchController.dispose();
     super.dispose();
   }
 
@@ -694,6 +691,266 @@ class _EventFormState extends State<EventForm> {
         _endCustomTime = picked;
       }
     });
+  }
+
+  Future<void> _openRoomSelectionModal() async {
+    final searchCtrl = TextEditingController();
+    String query = '';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final visibleRooms = _rooms.where((r) {
+              if (query.isEmpty) return true;
+              final map = asMap(r);
+              final name = map['name']?.toString().toLowerCase() ?? '';
+              final loc = map['location']?.toString().toLowerCase() ?? '';
+              return name.contains(query) || loc.contains(query);
+            }).toList();
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.viewInsetsOf(context).bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Pilih Ruangan',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: ink,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDBEAFE),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Bisa pilih > 1 ruangan',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'Centang satu atau beberapa ruangan sekaligus untuk kegiatan ini.',
+                    style: TextStyle(color: muted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  // Search Bar
+                  TextField(
+                    controller: searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama ruangan atau lokasi...',
+                      hintStyle: const TextStyle(fontSize: 12.5),
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      suffixIcon: query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                searchCtrl.clear();
+                                setModalState(() => query = '');
+                              },
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                      filled: true,
+                      fillColor: surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: inputBorder),
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 13),
+                    onChanged: (val) => setModalState(() => query = val.trim().toLowerCase()),
+                  ),
+                  const SizedBox(height: 10),
+                  // Action Bar (Select all / Deselect all / Count)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        query.isEmpty
+                            ? 'Total ${_rooms.length} ruangan'
+                            : 'Menampilkan ${visibleRooms.length} ruangan',
+                        style: const TextStyle(fontSize: 11.5, color: muted, fontWeight: FontWeight.w600),
+                      ),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                for (final r in visibleRooms) {
+                                  _selectedRoomIds.add(asMap(r)['id'] as int);
+                                }
+                              });
+                              setState(() {});
+                            },
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            child: const Text('Pilih Semua', style: TextStyle(fontSize: 11.5)),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                for (final r in visibleRooms) {
+                                  _selectedRoomIds.remove(asMap(r)['id'] as int);
+                                }
+                              });
+                              setState(() {});
+                            },
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            child: const Text('Batal Pilih', style: TextStyle(fontSize: 11.5)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // Room List Container
+                  Container(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.38,
+                    ),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      border: Border.all(color: inputBorder),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: visibleRooms.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(
+                              child: Text(
+                                'Tidak ada ruangan yang cocok.',
+                                style: TextStyle(color: muted, fontSize: 13),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: visibleRooms.length,
+                            separatorBuilder: (_, __) => const Divider(
+                              height: 1,
+                              indent: 48,
+                              color: line,
+                            ),
+                            itemBuilder: (context, index) {
+                              final room = asMap(visibleRooms[index]);
+                              final id = room['id'] as int;
+                              final isSelected = _selectedRoomIds.contains(id);
+                              final cap = room['capacity'];
+
+                              return CheckboxListTile(
+                                value: isSelected,
+                                dense: true,
+                                activeColor: accent,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        room['name']?.toString() ?? '',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                          color: isSelected ? ink : const Color(0xFF334155),
+                                        ),
+                                      ),
+                                    ),
+                                    if (cap != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2FE),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '$cap org',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF0369A1),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  room['location']?.toString() ?? 'SMKN 1 Bantul',
+                                  style: const TextStyle(fontSize: 11, color: muted),
+                                ),
+                                onChanged: (checked) {
+                                  setModalState(() {
+                                    if (checked == true) {
+                                      _selectedRoomIds.add(id);
+                                    } else {
+                                      _selectedRoomIds.remove(id);
+                                    }
+                                  });
+                                  setState(() {});
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 14),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Tutup & Terapkan (${_selectedRoomIds.length} Dipilih)',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _submit() async {
@@ -784,6 +1041,7 @@ class _EventFormState extends State<EventForm> {
                         message: 'Belum ada ruangan yang tersedia.',
                       )
                     else ...[
+                      // Header Row (Sama seperti Desktop)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -797,190 +1055,192 @@ class _EventFormState extends State<EventForm> {
                                   color: ink,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 2,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: accentSoft,
+                                  color: const Color(0xFFDBEAFE),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xFFFDE68A),
-                                  ),
                                 ),
-                                child: Text(
-                                  '${_selectedRoomIds.length} dipilih',
-                                  style: const TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: accentHover,
+                                child: const Text(
+                                  'Bisa pilih lebih dari 1 ruangan',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1D4ED8),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          Row(
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    if (_selectedRoomIds.length == _rooms.length) {
-                                      _selectedRoomIds.clear();
-                                    } else {
-                                      for (final r in _rooms) {
-                                        _selectedRoomIds.add(asMap(r)['id'] as int);
-                                      }
-                                    }
-                                  });
-                                },
-                                style: TextButton.styleFrom(
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                ),
-                                child: Text(
-                                  _selectedRoomIds.length == _rooms.length
-                                      ? 'Batal Semua'
-                                      : 'Pilih Semua',
-                                  style: const TextStyle(fontSize: 11.5),
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0B192E),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${_selectedRoomIds.length} dipilih',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
                               ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      if (_rooms.length > 4) ...[
-                        SizedBox(
-                          height: 38,
-                          child: TextField(
-                            controller: _roomSearchController,
-                            decoration: InputDecoration(
-                              hintText: 'Cari ruangan atau lokasi...',
-                              hintStyle: const TextStyle(fontSize: 12),
-                              prefixIcon: const Icon(Icons.search, size: 16),
-                              suffixIcon: _roomSearchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 14),
-                                      onPressed: () {
-                                        _roomSearchController.clear();
-                                        setState(() => _roomSearchQuery = '');
-                                      },
-                                    )
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-                              filled: true,
-                              fillColor: surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: inputBorder),
-                              ),
+
+                      // Trigger Bar (Tampilan Persis seperti di Desktop)
+                      InkWell(
+                        onTap: () => _openRoomSelectionModal(),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _selectedRoomIds.isNotEmpty ? accent : const Color(0xFFCBD5E1),
+                              width: 1.5,
                             ),
-                            style: const TextStyle(fontSize: 12.5),
-                            onChanged: (val) => setState(() => _roomSearchQuery = val.trim().toLowerCase()),
+                            boxShadow: [
+                              if (_selectedRoomIds.isNotEmpty)
+                                BoxShadow(
+                                  color: accent.withOpacity(0.12),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.meeting_room_outlined, size: 20, color: accent),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _selectedRoomIds.isEmpty
+                                      ? 'Klik untuk cari & pilih ruangan...'
+                                      : '${_selectedRoomIds.length} ruangan dipilih (Klik untuk ubah)',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedRoomIds.isEmpty ? muted : ink,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Pilih Ruangan',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: muted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.keyboard_arrow_down, size: 18, color: muted),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                      ],
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 180),
-                        decoration: BoxDecoration(
-                          color: surface,
-                          border: Border.all(color: inputBorder),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Builder(
-                          builder: (context) {
-                            final visibleRooms = _rooms.where((r) {
-                              if (_roomSearchQuery.isEmpty) return true;
-                              final map = asMap(r);
-                              final name = map['name']?.toString().toLowerCase() ?? '';
-                              final loc = map['location']?.toString().toLowerCase() ?? '';
-                              return name.contains(_roomSearchQuery) || loc.contains(_roomSearchQuery);
-                            }).toList();
-
-                            if (visibleRooms.isEmpty) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Text(
-                                    'Tidak ada ruangan yang cocok dengan pencarian.',
-                                    style: TextStyle(fontSize: 12, color: muted),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              itemCount: visibleRooms.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                height: 1,
-                                indent: 48,
-                                color: line,
-                              ),
-                              itemBuilder: (context, index) {
-                                final room = asMap(visibleRooms[index]);
-                                final id = room['id'] as int;
-                                final isSelected = _selectedRoomIds.contains(id);
-                                return CheckboxListTile(
-                                  value: isSelected,
-                                  dense: true,
-                                  activeColor: accent,
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  title: Text(
-                                    room['name']?.toString() ?? '',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight:
-                                          isSelected ? FontWeight.w800 : FontWeight.w600,
-                                      color: isSelected ? ink : const Color(0xFF334155),
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']} orang' : ''}',
-                                    style: const TextStyle(fontSize: 11, color: muted),
-                                  ),
-                                  onChanged: (checked) {
-                                    setState(() {
-                                      if (checked == true) {
-                                        _selectedRoomIds.add(id);
-                                      } else {
-                                        _selectedRoomIds.remove(id);
-                                      }
-                                    });
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        ),
                       ),
+
+                      // Selected Chips (Ruangan Terpilih di bawah kotak)
                       if (_selectedRoomIds.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            for (final r in _rooms)
-                              if (_selectedRoomIds.contains(asMap(r)['id']))
-                                Chip(
-                                  label: Text(
-                                    asMap(r)['name']?.toString() ?? '',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
-                                  ),
-                                  deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFF92400E)),
-                                  onDeleted: () => setState(() => _selectedRoomIds.remove(asMap(r)['id'] as int)),
-                                  backgroundColor: const Color(0xFFFEF3C7),
-                                  side: const BorderSide(color: Color(0xFFFDE68A)),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'RUANGAN TERPILIH:',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.3,
                                 ),
-                          ],
+                              ),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  for (final r in _rooms)
+                                    if (_selectedRoomIds.contains(asMap(r)['id']))
+                                      Container(
+                                        padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFFBEB),
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(color: const Color(0xFFFDE68A)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              asMap(r)['name']?.toString() ?? '',
+                                              style: const TextStyle(
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF92400E),
+                                              ),
+                                            ),
+                                            if (asMap(r)['capacity'] != null) ...[
+                                              const SizedBox(width: 4),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFEF3C7),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  '${asMap(r)['capacity']} org',
+                                                  style: const TextStyle(
+                                                    fontSize: 9.5,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFFB45309),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(width: 4),
+                                            GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedRoomIds.remove(asMap(r)['id'] as int);
+                                                });
+                                              },
+                                              child: Container(
+                                                width: 16,
+                                                height: 16,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF92400E).withOpacity(0.12),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.close,
+                                                  size: 11,
+                                                  color: Color(0xFF92400E),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ],
