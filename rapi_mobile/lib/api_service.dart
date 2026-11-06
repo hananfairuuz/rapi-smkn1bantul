@@ -242,24 +242,35 @@ class ApiService {
 
   Map<String, String> get requestHeaders => _headers();
 
+  Map<String, String> _cleanBody(Map<String, dynamic> raw) {
+    final result = <String, String>{};
+    for (final entry in raw.entries) {
+      if (entry.value != null) {
+        result[entry.key] = entry.value.toString();
+      }
+    }
+    return result;
+  }
+
   Future<Map<String, dynamic>> _request(
     String method,
     String path, {
     Map<String, String>? query,
-    Map<String, String>? body,
+    Map<String, dynamic>? body,
   }) async {
     final uri = _uri(path, query: query);
     final headers = _headers();
+    final stringBody = body != null ? _cleanBody(body) : null;
     final response = await _send(() async {
       switch (method) {
         case 'GET':
           return http.get(uri, headers: headers);
         case 'POST':
-          return http.post(uri, headers: headers, body: body);
+          return http.post(uri, headers: headers, body: stringBody);
         case 'PUT':
-          return http.put(uri, headers: headers, body: body);
+          return http.put(uri, headers: headers, body: stringBody);
         case 'PATCH':
-          return http.patch(uri, headers: headers, body: body);
+          return http.patch(uri, headers: headers, body: stringBody);
         case 'DELETE':
           return http.delete(uri, headers: headers);
         default:
