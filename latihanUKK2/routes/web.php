@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/calendar');
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+Route::get('/tentang', [CalendarController::class, 'about'])->name('about');
+Route::get('/fitur-layanan', [CalendarController::class, 'services'])->name('services');
+Route::get('/panduan-apk', [CalendarController::class, 'guide'])->name('guide');
 
 Route::get('/download-apk', function () {
     $apkPath = public_path('downloads/rapi-mobile.apk');
@@ -21,7 +24,7 @@ Route::get('/download-apk', function () {
             'Content-Type' => 'application/vnd.android.package-archive',
         ]);
     }
-    return redirect()->route('calendar', ['#tentang'])->with('error', 'File instalasi APK sedang disiapkan.');
+    return redirect()->route('guide')->with('error', 'File instalasi APK sedang disiapkan.');
 })->name('download.apk');
 
 Route::middleware('guest')->group(function () {

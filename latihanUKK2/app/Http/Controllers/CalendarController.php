@@ -93,4 +93,19 @@ class CalendarController extends Controller
 
         return view($request->user() ? 'calendar' : 'calendar-public', compact('month', 'events', 'holidays', 'holidaysAvailable', 'search', 'targetDate'));
     }
+
+    public function about()
+    {
+        return view('pages.about');
+    }
+
+    public function services()
+    {
+        return view('pages.services');
+    }
+
+    public function guide()
+    {
+        return view('pages.guide');
+    }
 }
