@@ -6,7 +6,10 @@
         <h1>Pengguna &amp; Peran</h1>
         <p class="muted">Kelola pengguna berdasarkan kelompok perannya.</p>
     </div>
-    <a class="btn" href="{{ route('users.create') }}">+ Tambah Pengguna</a>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <a class="btn secondary" href="{{ route('users.import') }}">📥 Import dari Dokumen</a>
+        <a class="btn" href="{{ route('users.create') }}">+ Tambah Pengguna</a>
+    </div>
 </div>
 
 <form method="get" action="{{ route('users.index') }}" class="card user-search">

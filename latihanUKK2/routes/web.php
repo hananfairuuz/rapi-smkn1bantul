@@ -63,6 +63,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/import', [UserController::class, 'importForm'])->name('users.import');
+    Route::post('/users/import/parse', [UserController::class, 'parseFile'])->name('users.import.parse');
+    Route::post('/users/import/store', [UserController::class, 'importStore'])->name('users.import.store');
+    Route::get('/users/import/template/{format}', [UserController::class, 'downloadTemplate'])->name('users.import.template');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');

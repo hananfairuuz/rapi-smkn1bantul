@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\UserDocumentParserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -68,6 +70,169 @@ class UserController extends Controller
         User::create($data);
 
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil ditambahkan.');
+    }
+
+    public function importForm()
+    {
+        $this->admin();
+
+        return view('users.import', [
+            'roles' => $this->managedRoles(),
+        ]);
+    }
+
+    public function parseFile(Request $request, UserDocumentParserService $parser)
+    {
+        $this->admin();
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:5120'],
+        ]);
+
+        $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, ['xlsx', 'xlsm', 'docx', 'csv', 'txt'])) {
+            $msg = 'Format file tidak didukung. Harap gunakan file Excel (.xlsx), Word (.docx), atau CSV (.csv).';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors(['file' => $msg]);
+        }
+
+        try {
+            $parsedRows = $parser->parse($file);
+        } catch (\Throwable $e) {
+            $msg = 'Gagal membaca isi dokumen: ' . $e->getMessage();
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors(['file' => $msg]);
+        }
+
+        if (empty($parsedRows)) {
+            $msg = 'Dokumen berhasil dibaca, namun tidak ditemukan baris data pengguna di dalamnya.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withErrors(['file' => $msg]);
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'count' => count($parsedRows),
+                'rows' => $parsedRows,
+            ]);
+        }
+
+        return redirect()->route('users.import')->with('parsed_rows', $parsedRows);
+    }
+
+    public function importStore(Request $request)
+    {
+        $this->admin();
+
+        $usersData = $request->input('users', []);
+        if (empty($usersData) || !is_array($usersData)) {
+            return back()->withErrors(['import' => 'Tidak ada data pengguna yang dikirim untuk disimpan.']);
+        }
+
+        $roles = $this->managedRoles()->keyBy('id');
+        $createdCount = 0;
+        $skippedEmails = [];
+        $seenEmails = [];
+        $errors = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($usersData as $idx => $row) {
+                $rowNum = $idx + 1;
+                $name = trim((string) ($row['name'] ?? ''));
+                $email = strtolower(trim((string) ($row['email'] ?? '')));
+                $password = (string) ($row['password'] ?? '');
+                $whatsapp = trim((string) ($row['whatsapp'] ?? ''));
+                $roleId = $row['role_id'] ?? null;
+
+                if ($name === '') {
+                    $errors[] = "Baris #{$rowNum}: Nama lengkap tidak boleh kosong.";
+                    continue;
+                }
+
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $errors[] = "Baris #{$rowNum} ({$name}): Format email '{$email}' tidak valid.";
+                    continue;
+                }
+
+                if (isset($seenEmails[$email])) {
+                    $skippedEmails[] = $email . ' (duplikat di file)';
+                    continue;
+                }
+                $seenEmails[$email] = true;
+
+                if (strlen($password) < 8) {
+                    $errors[] = "Baris #{$rowNum} ({$name}): Kata sandi minimal 8 karakter.";
+                    continue;
+                }
+
+                $cleanWa = preg_replace('/[^0-9]/', '', $whatsapp);
+                if (strlen($cleanWa) < 8 || strlen($cleanWa) > 20) {
+                    $errors[] = "Baris #{$rowNum} ({$name}): Nomor WhatsApp harus berisi 8-20 digit angka.";
+                    continue;
+                }
+
+                if (empty($roleId) || !$roles->has($roleId)) {
+                    $errors[] = "Baris #{$rowNum} ({$name}): Peran belum dipilih atau tidak valid.";
+                    continue;
+                }
+
+                if (User::where('email', $email)->exists()) {
+                    $skippedEmails[] = $email;
+                    continue;
+                }
+
+                User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => $password,
+                    'whatsapp' => $cleanWa,
+                    'role_id' => $roleId,
+                ]);
+
+                $createdCount++;
+            }
+
+            if (!empty($errors)) {
+                DB::rollBack();
+                $errorPreview = implode('<br>', array_slice($errors, 0, 5));
+                if (count($errors) > 5) {
+                    $errorPreview .= '<br>...dan ' . (count($errors) - 5) . ' kesalahan lainnya.';
+                }
+                return back()->withInput()->withErrors(['import' => $errorPreview]);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['import' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
+        }
+
+        $message = "Berhasil menambahkan {$createdCount} pengguna baru.";
+        if (!empty($skippedEmails)) {
+            $message .= " (" . count($skippedEmails) . " email dilewati karena sudah terdaftar: " . implode(', ', array_slice($skippedEmails, 0, 3)) . (count($skippedEmails) > 3 ? '...' : '') . ")";
+        }
+
+        return redirect()->route('users.index')->with('success', $message);
+    }
+
+    public function downloadTemplate(string $format, UserDocumentParserService $parser)
+    {
+        $this->admin();
+
+        $tpl = $parser->generateTemplate($format);
+
+        return response($tpl['content'])
+            ->header('Content-Type', $tpl['mime'])
+            ->header('Content-Disposition', "attachment; filename=\"{$tpl['filename']}\"");
     }
 
     public function edit(User $user)

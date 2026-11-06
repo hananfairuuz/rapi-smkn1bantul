@@ -1,6 +1,15 @@
 @extends('layouts.app')
 @section('content')
 <div class="page-heading"><div><h1>{{ $creating ? 'Tambah Pengguna' : 'Ubah Pengguna' }}</h1><p>{{ $creating ? 'Buat akun email baru untuk pengguna sistem.' : 'Peran PIC dapat ditetapkan lalu dihubungkan ke ruangan pada menu Kelola Ruangan.' }}</p></div></div>
+@if($creating)
+    <div style="margin-bottom: 1.25rem; padding: 0.85rem 1.15rem; background: #f0f7ff; border: 1px solid #bae0ff; border-radius: 8px; color: #0050b3; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <strong>Ingin menambah banyak pengguna sekaligus?</strong>
+            <span style="font-size: 0.9em; opacity: 0.9;"> Anda dapat mengunggah file Excel (.xlsx), Word (.docx), atau CSV (.csv).</span>
+        </div>
+        <a href="{{ route('users.import') }}" class="btn secondary" style="padding: 6px 14px; font-size: 0.85rem; border-color: #91caff;">📥 Import dari Dokumen</a>
+    </div>
+@endif
 <form class="card form-card" method="post" action="{{ $creating ? route('users.store') : route('users.update', $user) }}">@csrf @unless($creating) @method('put') @endunless
     <label for="name">Nama lengkap</label><input id="name" name="name" value="{{ old('name', $user->name) }}" required>
     <label for="email">Email akun (untuk masuk)</label><input id="email" type="email" name="email" value="{{ old('email', $user->email) }}" autocomplete="email" required>
