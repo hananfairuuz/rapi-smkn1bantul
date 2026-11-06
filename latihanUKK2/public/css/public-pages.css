@@ -1,0 +1,941 @@
+/* ========================================================
+   RAPI-SEKOLAH: PUBLIC PAGES STYLESHEET
+   SMK NEGERI 1 BANTUL
+   ======================================================== */
+
+/* Reset & Body */
+.public-page-body {
+    background-color: #f8fafc !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header Brand Link Fix (Menghilangkan Border Kotak di Sekitar Logo) */
+.public-header .public-brand-link {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+.public-header .public-brand-link:hover {
+    border: none !important;
+    background: transparent !important;
+    opacity: 0.95;
+}
+.public-header .public-brand-link img {
+    width: 48px !important;
+    height: 48px !important;
+    object-fit: contain !important;
+}
+
+/* Main Container */
+.public-main {
+    flex: 1 0 auto;
+    max-width: 1120px !important;
+    width: 100% !important;
+    margin: 32px auto 48px !important;
+    padding: 0 20px !important;
+    box-sizing: border-box;
+}
+.page-container {
+    width: 100%;
+}
+.page-section {
+    margin-top: 48px;
+}
+
+/* Alert Notifikasi */
+.public-alert {
+    max-width: 1120px;
+    margin: 16px auto 0;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: center;
+}
+.public-alert--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+.public-alert--success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+/* Section Centered Header */
+.section-center-head {
+    text-align: center;
+    max-width: 780px;
+    margin: 0 auto 36px;
+    padding: 0 10px;
+}
+.badge-pill {
+    display: inline-block;
+    background: #e0f2fe !important;
+    color: #0284c7 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    padding: 5px 14px !important;
+    border-radius: 999px !important;
+    margin-bottom: 12px !important;
+    border: 1px solid rgba(2, 132, 199, 0.18) !important;
+}
+.section-main-title {
+    font-size: 28px !important;
+    font-weight: 850 !important;
+    color: #0f172a !important;
+    margin: 0 0 12px !important;
+    letter-spacing: -0.025em !important;
+    line-height: 1.3 !important;
+}
+.section-main-subtitle {
+    font-size: 14.5px !important;
+    color: #64748b !important;
+    line-height: 1.65 !important;
+    margin: 0 !important;
+}
+
+/* ========================================================
+   1. HALAMAN TENTANG: HERO BANNER & KARTU AKSES (FOTO 1)
+   ======================================================== */
+.about-hero-banner {
+    background: radial-gradient(circle at top right, #172d4d 0%, #071527 100%) !important;
+    border-radius: 22px !important;
+    padding: 44px 48px !important;
+    color: #ffffff !important;
+    box-shadow: 0 20px 45px -10px rgba(2, 8, 23, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-bottom: 48px !important;
+    position: relative;
+    overflow: hidden;
+}
+.about-hero-grid {
+    display: grid !important;
+    grid-template-columns: 1.25fr 0.75fr !important;
+    gap: 40px !important;
+    align-items: center !important;
+    position: relative;
+    z-index: 1;
+}
+.hero-chip {
+    display: inline-block !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.6px !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    padding: 4px 12px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    margin-bottom: 16px !important;
+}
+.hero-main-title {
+    font-size: 32px !important;
+    font-weight: 850 !important;
+    color: #ffffff !important;
+    line-height: 1.22 !important;
+    margin: 0 0 16px !important;
+    letter-spacing: -0.02em !important;
+}
+.hero-highlight {
+    color: #38bdf8 !important;
+}
+.hero-main-desc {
+    font-size: 14.5px !important;
+    color: #94a3b8 !important;
+    line-height: 1.65 !important;
+    margin: 0 0 28px !important;
+    max-width: 530px !important;
+}
+.hero-btn-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    flex-wrap: wrap !important;
+}
+.btn-hero-primary {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 750 !important;
+    font-size: 13.5px !important;
+    padding: 11px 22px !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+.btn-hero-primary:hover {
+    background: #1d4ed8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45) !important;
+}
+.btn-hero-secondary {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    font-weight: 750 !important;
+    font-size: 13.5px !important;
+    padding: 11px 20px !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    transition: all 0.2s ease !important;
+}
+.btn-hero-secondary:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    transform: translateY(-2px);
+}
+
+/* Virtual Digital Card (Kanan Banner Foto 1) */
+.virtual-card-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+}
+.virtual-card {
+    width: 100% !important;
+    max-width: 340px !important;
+    aspect-ratio: 1.58 / 1 !important;
+    border-radius: 18px !important;
+    padding: 22px 24px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #6366f1 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 18px 40px rgba(30, 64, 175, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box;
+}
+.card-glass-glow {
+    position: absolute;
+    top: -60%;
+    left: -60%;
+    width: 220%;
+    height: 220%;
+    background: radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
+    pointer-events: none;
+}
+.card-top-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    z-index: 1;
+}
+.card-sublabel {
+    display: block !important;
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+.card-title {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.2px !important;
+    color: #ffffff !important;
+}
+.card-chip-icon {
+    opacity: 0.85;
+}
+.card-mid-section {
+    z-index: 1;
+    margin: 10px 0 !important;
+}
+.card-code-label {
+    display: block !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin-bottom: 4px !important;
+}
+.card-code-number {
+    font-family: 'Courier New', monospace, sans-serif !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    letter-spacing: 2px !important;
+    color: #ffffff !important;
+}
+.card-bottom-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    z-index: 1;
+}
+.card-meta-label {
+    display: block !important;
+    font-size: 8.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin-bottom: 2px !important;
+}
+.card-meta-val {
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+}
+.card-meta-badge {
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 3 Info Cards (Bawah Hero Foto 1) */
+.three-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 24px !important;
+}
+.info-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    padding: 30px 26px !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-sizing: border-box;
+}
+.info-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+.info-card-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 18px !important;
+}
+.icon-blue { background: #e0f2fe !important; color: #0284c7 !important; }
+.icon-purple { background: #f3e8ff !important; color: #9333ea !important; }
+.icon-green { background: #dcfce7 !important; color: #16a34a !important; }
+.icon-yellow { background: #fef3c7 !important; color: #d97706 !important; }
+.info-card-title {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 0 10px !important;
+    line-height: 1.35 !important;
+}
+.info-card-desc {
+    font-size: 13.5px !important;
+    color: #64748b !important;
+    line-height: 1.6 !important;
+    margin: 0 !important;
+}
+
+/* Transformasi Digital Comparison */
+.comparison-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 36px 32px !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box;
+}
+.comparison-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+    margin-top: 24px !important;
+}
+.comparison-col {
+    border-radius: 14px !important;
+    padding: 22px 24px !important;
+    box-sizing: border-box;
+}
+.col-before {
+    background: #fff5f5 !important;
+    border: 1px solid #fed7d7 !important;
+}
+.col-after {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+.comparison-col-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+}
+.comparison-col-header h4 {
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+.col-indicator {
+    display: inline-flex !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+}
+.indicator-red { background: #ef4444 !important; color: #ffffff !important; }
+.indicator-green { background: #22c55e !important; color: #ffffff !important; }
+.comparison-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+.comparison-list li {
+    font-size: 13.5px !important;
+    color: #334155 !important;
+    line-height: 1.55 !important;
+    position: relative !important;
+    padding-left: 18px !important;
+}
+.comparison-list li::before {
+    content: "•" !important;
+    position: absolute !important;
+    left: 0 !important;
+    font-weight: bold !important;
+    color: #64748b !important;
+}
+
+/* CTA Banners */
+.cta-banner {
+    background: linear-gradient(135deg, #0b192e 0%, #1e293b 100%) !important;
+    border-radius: 18px !important;
+    padding: 32px 36px !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    flex-wrap: wrap !important;
+    box-shadow: 0 12px 32px rgba(2, 8, 23, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-sizing: border-box;
+}
+.cta-content h3 {
+    font-size: 20px !important;
+    font-weight: 850 !important;
+    margin: 0 0 6px !important;
+    color: #ffffff !important;
+}
+.cta-content p {
+    font-size: 13.5px !important;
+    color: #94a3b8 !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+}
+.cta-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+}
+.btn-cta-white {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 13.5px !important;
+    padding: 11px 20px !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+}
+.btn-cta-white:hover {
+    background: #f1f5f9 !important;
+    transform: translateY(-2px);
+}
+.btn-cta-trans {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    font-weight: 750 !important;
+    font-size: 13.5px !important;
+    padding: 11px 20px !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+.btn-cta-trans:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+    transform: translateY(-2px);
+}
+
+/* ========================================================
+   2. HALAMAN FITUR LAYANAN: 3 ROLE CARDS (FOTO 2)
+   ======================================================== */
+.role-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 24px !important;
+    margin-top: 10px !important;
+}
+.role-service-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 32px 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-sizing: border-box;
+}
+.role-service-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+.role-tag-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    font-size: 11.5px !important;
+    font-weight: 750 !important;
+    padding: 5px 12px !important;
+    border-radius: 999px !important;
+    margin-bottom: 18px !important;
+    width: fit-content !important;
+}
+.tag-green { background: #ecfdf5 !important; color: #059669 !important; border: 1px solid #a7f3d0 !important; }
+.tag-blue { background: #eff6ff !important; color: #2563eb !important; border: 1px solid #bfdbfe !important; }
+.tag-purple { background: #faf5ff !important; color: #7c3aed !important; border: 1px solid #e9d5ff !important; }
+.tag-dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-green { background: #10b981 !important; }
+.dot-blue { background: #3b82f6 !important; }
+.dot-purple { background: #8b5cf6 !important; }
+.role-card-h2 {
+    font-size: 20px !important;
+    font-weight: 850 !important;
+    color: #0f172a !important;
+    margin: 0 0 8px !important;
+    line-height: 1.3 !important;
+}
+.role-card-lead {
+    font-size: 13.5px !important;
+    color: #64748b !important;
+    line-height: 1.6 !important;
+    margin: 0 0 24px !important;
+}
+.role-checklist {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 0 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+}
+.role-checklist li {
+    display: flex !important;
+    gap: 11px !important;
+    align-items: flex-start !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    color: #475569 !important;
+}
+.role-checklist li strong {
+    color: #1e293b !important;
+    font-weight: 750 !important;
+    display: inline !important;
+}
+.check-icon {
+    flex-shrink: 0 !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 1px !important;
+}
+.check-green { background: #dcfce7 !important; color: #16a34a !important; }
+.check-blue { background: #dbeafe !important; color: #2563eb !important; }
+.check-purple { background: #f3e8ff !important; color: #7c3aed !important; }
+.role-card-footer {
+    padding-top: 18px !important;
+    border-top: 1px solid #f1f5f9 !important;
+    text-align: center !important;
+}
+.role-action-btn {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    font-size: 13.5px !important;
+    font-weight: 750 !important;
+    text-decoration: none !important;
+    padding: 11px 16px !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+.action-green { color: #059669 !important; background: #ecfdf5 !important; border: 1px solid #a7f3d0 !important; }
+.action-green:hover { background: #059669 !important; color: #ffffff !important; }
+.action-blue { color: #2563eb !important; background: #eff6ff !important; border: 1px solid #bfdbfe !important; }
+.action-blue:hover { background: #2563eb !important; color: #ffffff !important; }
+.action-purple { color: #7c3aed !important; background: #faf5ff !important; border: 1px solid #e9d5ff !important; }
+.action-purple:hover { background: #7c3aed !important; color: #ffffff !important; }
+
+/* SOP Workflow */
+.workflow-steps-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 18px !important;
+    margin-top: 20px !important;
+}
+.workflow-step-box {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 22px 20px !important;
+    box-sizing: border-box;
+}
+.workflow-num {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    background: #0b192e !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 12px !important;
+}
+.workflow-step-box h4 {
+    margin: 0 0 6px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+.workflow-step-box p {
+    margin: 0 !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    line-height: 1.5 !important;
+}
+
+/* ========================================================
+   3. HALAMAN PANDUAN APK: 4 STEP CARDS (FOTO 3)
+   ======================================================== */
+.guide-steps-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+    margin-bottom: 32px !important;
+}
+.guide-step-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    padding: 26px 22px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box;
+}
+.guide-step-number {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3) !important;
+}
+.guide-step-title {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 0 8px !important;
+    line-height: 1.35 !important;
+}
+.guide-step-desc {
+    font-size: 13px !important;
+    color: #64748b !important;
+    line-height: 1.6 !important;
+    margin: 0 0 16px !important;
+    flex-grow: 1 !important;
+}
+.inline-code {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 11.5px !important;
+    font-family: monospace !important;
+}
+.guide-step-footer {
+    padding-top: 12px !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+.step-footer-tag {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #0284c7 !important;
+    background: #f0f9ff !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+}
+
+/* Blue CTA Banner in Guide (Foto 3) */
+.guide-cta-banner {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%) !important;
+    border-radius: 18px !important;
+    padding: 32px 36px !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    flex-wrap: wrap !important;
+    box-shadow: 0 14px 34px rgba(29, 78, 216, 0.35) !important;
+    margin-bottom: 40px !important;
+    box-sizing: border-box;
+}
+.guide-cta-info h3 {
+    font-size: 22px !important;
+    font-weight: 850 !important;
+    color: #ffffff !important;
+    margin: 0 0 6px !important;
+}
+.guide-cta-info p {
+    font-size: 14px !important;
+    color: #dbeafe !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+    max-width: 540px !important;
+}
+.btn-guide-download {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    padding: 13px 24px !important;
+    border-radius: 12px !important;
+    text-decoration: none !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+}
+.btn-guide-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25) !important;
+    background: #f8fafc !important;
+}
+
+/* Extra Guide & FAQ */
+.two-col-guide-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+}
+.guide-info-box {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    padding: 28px 26px !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box;
+}
+.guide-box-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+}
+.box-icon-circle {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+.detailed-guide-list {
+    padding-left: 20px !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+}
+.detailed-guide-list li {
+    font-size: 13.5px !important;
+    color: #475569 !important;
+    line-height: 1.55 !important;
+}
+.detailed-guide-list li strong {
+    display: block !important;
+    color: #0f172a !important;
+    font-size: 14px !important;
+    margin-bottom: 2px !important;
+}
+.faq-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+.faq-item strong {
+    display: block !important;
+    font-size: 13.5px !important;
+    color: #0f172a !important;
+    margin-bottom: 4px !important;
+}
+.faq-item p {
+    font-size: 13px !important;
+    color: #64748b !important;
+    line-height: 1.55 !important;
+    margin: 0 !important;
+}
+
+/* ========================================================
+   4. FOOTER RESMI SEKOLAH
+   ======================================================== */
+.public-footer {
+    background: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 40px 20px 24px !important;
+    margin-top: 60px !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+.public-footer-inner {
+    max-width: 1120px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 32px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 28px !important;
+}
+.public-footer-brand {
+    max-width: 480px !important;
+}
+.footer-logo-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 8px !important;
+}
+.footer-logo-wrap img {
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+}
+.footer-logo-wrap strong {
+    font-size: 15px !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+.public-footer-brand p {
+    color: #64748b !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    margin: 0 !important;
+}
+.public-footer-links {
+    display: flex !important;
+    gap: 20px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+}
+.public-footer-links a {
+    color: #475569 !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+.public-footer-links a:hover,
+.public-footer-links a.active {
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+}
+.public-footer-bottom {
+    max-width: 1120px !important;
+    margin: 0 auto !important;
+    padding-top: 20px !important;
+    border-top: 1px solid #f1f5f9 !important;
+    text-align: center !important;
+    color: #94a3b8 !important;
+    font-size: 12px !important;
+}
+
+/* ========================================================
+   5. RESPONSIVE BREAKPOINTS
+   ======================================================== */
+@media (max-width: 960px) {
+    .about-hero-grid { grid-template-columns: 1fr !important; }
+    .virtual-card-wrapper { justify-content: flex-start !important; }
+    .three-cards-grid { grid-template-columns: 1fr !important; }
+    .role-cards-grid { grid-template-columns: 1fr !important; }
+    .guide-steps-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .workflow-steps-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .two-col-guide-grid { grid-template-columns: 1fr !important; }
+    .comparison-grid { grid-template-columns: 1fr !important; }
+    .guide-cta-banner, .cta-banner { flex-direction: column !important; text-align: center !important; justify-content: center !important; }
+    .cta-actions { justify-content: center !important; }
+}
+@media (max-width: 640px) {
+    .about-hero-banner { padding: 30px 22px !important; }
+    .hero-main-title { font-size: 25px !important; }
+    .guide-steps-grid, .workflow-steps-grid { grid-template-columns: 1fr !important; }
+    .public-footer-inner { flex-direction: column !important; gap: 20px !important; }
+    .public-footer-links { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+}
+
