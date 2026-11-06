@@ -127,6 +127,14 @@ class ApiService {
     return List<dynamic>.from(data['rooms'] as List);
   }
 
+  Future<Map<String, dynamic>> createRoom(Map<String, dynamic> body) =>
+      _request('POST', '/rooms', body: body);
+
+  Future<Map<String, dynamic>> updateRoom(int id, Map<String, dynamic> body) =>
+      _request('PUT', '/rooms/$id', body: body);
+
+  Future<void> deleteRoom(int id) => _request('DELETE', '/rooms/$id');
+
   Future<Map<String, dynamic>> getLessonPeriods() =>
       _request('GET', '/lesson-periods');
 

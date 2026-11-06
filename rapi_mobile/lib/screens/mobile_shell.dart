@@ -38,6 +38,10 @@ class _MobileShellState extends State<MobileShell> {
       ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
   bool get _canCreateComplaints =>
       ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
+  bool get _canAccessRooms =>
+      ['admin', 'guru', 'organisasi', 'pic'].contains(widget.user['role']);
+  bool get _canManageRooms =>
+      ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
 
   List<_NavDestination> get _destinations => [
     const _NavDestination('Beranda', Icons.dashboard_outlined, Icons.dashboard),
@@ -52,7 +56,7 @@ class _MobileShellState extends State<MobileShell> {
       Icons.calendar_month_outlined,
       Icons.calendar_month,
     ),
-    if (_isPic)
+    if (_canAccessRooms)
       const _NavDestination(
         'Ruangan',
         Icons.meeting_room_outlined,
@@ -122,7 +126,7 @@ class _MobileShellState extends State<MobileShell> {
         onOpenAgenda: _canManageEvents ? () => _navigateToTab('Agenda') : null,
         onOpenCalendar: () => _navigateToTab('Kalender'),
         onOpenComplaints: () => _navigateToTab('Pengaduan'),
-        onOpenRooms: _isPic ? () => _navigateToTab('Ruangan') : null,
+        onOpenRooms: _canAccessRooms ? () => _navigateToTab('Ruangan') : null,
         onOpenReport: _isPic ? () => _navigateToTab('Laporan') : null,
         onReportDamage: _handleReportDamage,
       ),
@@ -137,7 +141,12 @@ class _MobileShellState extends State<MobileShell> {
         currentUser: widget.user,
         onReportDamage: _handleReportDamage,
       ),
-      if (_isPic) RoomsScreen(api: widget.api),
+      if (_canAccessRooms)
+        RoomsScreen(
+          api: widget.api,
+          user: widget.user,
+          canManage: _canManageRooms,
+        ),
       if (_isPic) DamagedGoodsReportScreen(api: widget.api),
       ComplaintsScreen(
         key: _complaintsKey,

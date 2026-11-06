@@ -60,7 +60,7 @@
                                 <input type="checkbox" id="room-chk-{{ $room->id }}" name="room_ids[]" value="{{ $room->id }}" class="room-chk-input" @checked(in_array($room->id, (array) old('room_ids', [])))>
                                 <span class="room-pick-info">
                                     <span class="room-pick-name">{{ $room->name }}</span>
-                                    <span class="room-pick-meta">{{ $room->location ?: 'SMKN 1 Bantul' }} · Kapasitas {{ $room->capacity ?? '-' }}</span>
+                                    <span class="room-pick-meta">{{ $room->location ?: 'SMKN 1 Bantul' }} · Kapasitas {{ $room->capacity ? $room->capacity . ' orang' : '-' }}</span>
                                 </span>
                             </label>
                         @endforeach

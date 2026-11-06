@@ -312,7 +312,74 @@ class MobileApiController extends Controller
             $query->where('pic_id', $request->user()->id);
         }
 
-        return response()->json(['rooms' => $query->get(['id', 'name', 'location', 'description', 'pic_id'])]);
+        return response()->json([
+            'rooms' => $query->get(['id', 'name', 'location', 'capacity', 'description', 'pic_id']),
+        ]);
+    }
+
+    public function createRoom(Request $request)
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'capacity' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'description' => ['nullable', 'string'],
+            'pic_id' => ['nullable', 'exists:users,id'],
+        ], [
+            'name.required' => 'Nama ruangan wajib diisi.',
+            'capacity.integer' => 'Kapasitas ruangan harus berupa angka bulat.',
+            'capacity.min' => 'Kapasitas ruangan minimal 1 orang.',
+        ]);
+
+        $room = Room::create($data)->load('pic:id,name');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ruangan berhasil ditambahkan.',
+            'room' => $room,
+        ], 201);
+    }
+
+    public function updateRoom(Request $request, Room $room)
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'capacity' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'description' => ['nullable', 'string'],
+            'pic_id' => ['nullable', 'exists:users,id'],
+        ], [
+            'name.required' => 'Nama ruangan wajib diisi.',
+            'capacity.integer' => 'Kapasitas ruangan harus berupa angka bulat.',
+            'capacity.min' => 'Kapasitas ruangan minimal 1 orang.',
+        ]);
+
+        $room->update($data);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ruangan berhasil diperbarui.',
+            'room' => $room->load('pic:id,name'),
+        ]);
+    }
+
+    public function deleteRoom(Request $request, Room $room)
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+
+        $room->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ruangan berhasil dihapus.',
+        ]);
     }
 
     public function lessonPeriods()

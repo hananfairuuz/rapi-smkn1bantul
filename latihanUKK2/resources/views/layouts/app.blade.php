@@ -41,7 +41,7 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21 20H3L12 3.5Z" /><path d="M12 9v4.5M12 17h.01" /></svg>
                 <span>Pengaduan Fasilitas</span>
             </a>
-            @if(in_array(auth()->user()->role?->name, ['admin', 'pic']))
+            @if(in_array(auth()->user()->role?->name, ['admin', 'pic', 'guru', 'organisasi']))
                 <a class="nav-item {{ request()->routeIs('rooms.*') ? 'active' : '' }}" href="{{ route('rooms.index') }}" title="Kelola Ruangan">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20.5V5.8a1.8 1.8 0 0 1 1.3-1.7l11-3A1.8 1.8 0 0 1 18.5 2.8v17.7M2.5 20.5h19M8 8v.01M8 12v.01M8 16v.01M12 7v.01M12 11v.01M12 15v.01M15.5 12.5h.01" /></svg>
                     <span>Kelola Ruangan</span>

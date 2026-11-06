@@ -56,6 +56,9 @@ Route::middleware(AuthenticateApiToken::class)->group(function () {
     Route::put('/profile', [MobileApiController::class, 'updateProfile']);
     Route::get('/dashboard', [MobileApiController::class, 'dashboard']);
     Route::get('/rooms', [MobileApiController::class, 'rooms']);
+    Route::post('/rooms', [MobileApiController::class, 'createRoom']);
+    Route::put('/rooms/{room}', [MobileApiController::class, 'updateRoom']);
+    Route::delete('/rooms/{room}', [MobileApiController::class, 'deleteRoom']);
     Route::get('/lesson-periods', [MobileApiController::class, 'lessonPeriods']);
     Route::get('/events', [MobileApiController::class, 'events']);
     Route::post('/events', [MobileApiController::class, 'createEvent']);

@@ -883,7 +883,7 @@ class _EventFormState extends State<EventForm> {
                                 ),
                               ),
                               subtitle: Text(
-                                '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']}' : ''}',
+                                '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']} orang' : ''}',
                                 style: const TextStyle(fontSize: 11, color: muted),
                               ),
                               onChanged: (checked) {

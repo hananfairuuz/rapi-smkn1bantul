@@ -9,7 +9,11 @@ class Room extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'location', 'description', 'pic_id'];
+    protected $fillable = ['name', 'location', 'capacity', 'description', 'pic_id'];
+
+    protected $casts = [
+        'capacity' => 'integer',
+    ];
 
     public function pic()
     {
