@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'RAPI-Sekolah · SMK Negeri 1 Bantul')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/school-logo.png') }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : 2 }}">
-    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}?v={{ file_exists(public_path('css/public-pages.css')) ? filemtime(public_path('css/public-pages.css')) : 2 }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : 3 }}">
+    <link rel="stylesheet" href="{{ asset('css/public-pages.css') }}?v={{ file_exists(public_path('css/public-pages.css')) ? filemtime(public_path('css/public-pages.css')) : 3 }}">
 </head>
 <body class="public-page-body">
 <header class="public-header">
     <div class="public-brand">
         <a href="{{ route('calendar') }}" class="public-brand-link">
-            <img src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain;">
+            <img src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul" width="36" height="36" style="width: 36px; height: 36px; object-fit: contain;">
             <div>
                 <h1>RAPI-Sekolah</h1>
                 <p>Sistem Pengelolaan Infrastruktur & Agenda Ruangan</p>
@@ -47,28 +47,6 @@
 <main class="public-main @yield('main_class')">
     @yield('content')
 </main>
-
-<footer class="public-footer">
-    <div class="public-footer-inner">
-        <div class="public-footer-brand">
-            <div class="footer-logo-wrap">
-                <img src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul" width="28" height="28" style="width: 28px; height: 28px; object-fit: contain;">
-                <strong>RAPI-Sekolah • SMK Negeri 1 Bantul</strong>
-            </div>
-            <p>Platform digital manajemen agenda ruangan, transparansi sarana prasarana, dan layanan pelaporan fasilitas sekolah.</p>
-        </div>
-        <div class="public-footer-links">
-            <a href="{{ route('calendar') }}" class="{{ request()->routeIs('calendar') ? 'active' : '' }}">Kalender Agenda</a>
-            <a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}">Tentang Sistem</a>
-            <a href="{{ route('services') }}" class="{{ request()->routeIs('services') ? 'active' : '' }}">Fitur Layanan</a>
-            <a href="{{ route('guide') }}" class="{{ request()->routeIs('guide') ? 'active' : '' }}">Panduan APK</a>
-            <a href="{{ route('login') }}">Portal Masuk</a>
-        </div>
-    </div>
-    <div class="public-footer-bottom">
-        <p>© {{ date('Y') }} SMK Negeri 1 Bantul • RAPI-Sekolah. Seluruh Hak Cipta Dilindungi.</p>
-    </div>
-</footer>
 
 @stack('scripts')
 </body>

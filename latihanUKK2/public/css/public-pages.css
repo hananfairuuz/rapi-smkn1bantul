@@ -3,27 +3,39 @@
    SMK NEGERI 1 BANTUL
    ======================================================== */
 
-/* Reset & Body */
-.public-page-body {
-    background-color: #f8fafc !important;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    font-family: var(--font, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
-    color: #1e293b;
-    margin: 0;
-    padding: 0;
+/* ========================================================
+   RAPI-SEKOLAH: COMPACT SLEEK NAVBAR STYLING
+   ======================================================== */
+.public-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 11px 28px !important;
+    color: #ffffff !important;
+    background: #091931 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Header Brand Link Fix (Menghilangkan Border Kotak di Sekitar Logo) */
-.public-header .public-brand-link {
+/* Header Brand Link Fix (Tanpa Garis Pinggir / Border) */
+.public-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
     border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+.public-header .public-brand-link,
+.public-brand a {
+    border: none !important;
+    outline: none !important;
     padding: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
+    gap: 10px !important;
     color: #ffffff !important;
     text-decoration: none !important;
 }
@@ -32,10 +44,79 @@
     background: transparent !important;
     opacity: 0.95;
 }
-.public-header .public-brand-link img {
-    width: 48px !important;
-    height: 48px !important;
+.public-header .public-brand-link img,
+.public-brand img {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
     object-fit: contain !important;
+}
+.public-header h1 {
+    margin: 0 !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.01em !important;
+    color: #ffffff !important;
+}
+.public-header p {
+    margin: 1px 0 0 !important;
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    line-height: 1.2 !important;
+}
+
+/* Navigasi Tengah */
+.public-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+.public-header .public-nav-link {
+    border: 1px solid transparent !important;
+    padding: 6px 14px !important;
+    border-radius: 7px !important;
+    color: #cbd5e1 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+    line-height: 1.4 !important;
+}
+.public-header .public-nav-link:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+.public-header .public-nav-link.active {
+    color: #ffffff !important;
+    background: #16243a !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Tombol Masuk Kanan */
+.public-actions {
+    display: flex !important;
+    align-items: center !important;
+}
+.public-header .public-login-button {
+    padding: 6px 18px !important;
+    border: 1px solid #f59e0b !important;
+    border-radius: 7px !important;
+    color: #0f172a !important;
+    background: #f59e0b !important;
+    font-weight: 750 !important;
+    font-size: 13px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3) !important;
+}
+.public-header .public-login-button:hover {
+    background: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
 }
 
 /* Main Container */
