@@ -42,3 +42,8 @@ rapi_mobile/ios/.symlinks/
 rapi_mobile/ios/Flutter/Flutter.framework
 rapi_mobile/ios/Flutter/Flutter.podspec
 rapi_mobile/ios/Pods/
+
+# Large Binary & APK Files
+*.apk
+latihanUKK2/public/downloads/*.apk
+
