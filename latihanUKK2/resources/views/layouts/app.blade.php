@@ -12,22 +12,14 @@
 </head>
 <body>
 <div class="app-shell">
-    <!-- Backdrop overlay for mobile sidebar -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-    <aside class="sidebar" id="mobileSidebar">
+    <aside class="sidebar">
         <div class="sidebar-header">
             <a class="sidebar-brand" href="{{ route('dashboard') }}">
                 <img class="sidebar-logo" src="{{ asset('images/school-logo.png') }}" alt="Logo SMK Negeri 1 Bantul">
                 <span class="sidebar-brand-copy"><strong>RAPI-Sekolah</strong><span class="sidebar-subtitle">Manajemen Infrastruktur</span></span>
             </a>
-            <!-- Desktop collapse button -->
-            <button class="sidebar-toggle sidebar-toggle-desktop" type="button" aria-label="Kecilkan menu samping" aria-expanded="true" title="Kecilkan menu samping">
+            <button class="sidebar-toggle" type="button" aria-label="Kecilkan menu samping" aria-expanded="true" title="Kecilkan menu samping">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
-            </button>
-            <!-- Mobile close button -->
-            <button class="sidebar-close-mobile" id="sidebarCloseMobile" type="button" aria-label="Tutup menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
         <nav class="sidebar-nav">
@@ -84,13 +76,7 @@
     </aside>
     <div class="main-area">
         <header class="topbar">
-            <!-- Mobile hamburger button -->
-            <button class="mobile-nav-toggle" id="mobileNavToggle" type="button" aria-label="Buka menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
             <div class="topbar-title">@yield('topbar', 'Sistem RAPI-Sekolah')</div>
-            <!-- Mobile brand shown in topbar when sidebar hidden -->
-            <div class="topbar-mobile-brand">RAPI-Sekolah</div>
             <div class="profile"><span class="avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ match(auth()->user()->role?->name) {'admin' => 'Waka / Admin', 'pic' => 'PIC Ruang', 'guru' => 'Guru', 'organisasi' => 'Organisasi', default => 'Pengguna'} }}</small></div></div>
         </header>
         <main class="page-content">
@@ -100,74 +86,21 @@
         </main>
     </div>
 </div>
-
-<!-- Mobile Bottom Navigation Bar -->
-<nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a class="mbn-item {{ request()->routeIs('dashboard') ? 'mbn-active' : '' }}" href="{{ route('dashboard') }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
-        <span>Beranda</span>
-    </a>
-    @if(in_array(auth()->user()->role?->name, ['admin', 'guru', 'organisasi']))
-    <a class="mbn-item {{ request()->routeIs('events.*') ? 'mbn-active' : '' }}" href="{{ route('events.index') }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M12 12.5v3l2 1.2M12 12.5a3 3 0 1 0 3 3"/></svg>
-        <span>Agenda</span>
-    </a>
-    @endif
-    <a class="mbn-item {{ request()->routeIs('calendar') ? 'mbn-active' : '' }}" href="{{ route('calendar') }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01"/></svg>
-        <span>Kalender</span>
-    </a>
-    @if(in_array(auth()->user()->role?->name, ['admin', 'pic', 'guru', 'organisasi']))
-    <a class="mbn-item {{ request()->routeIs('rooms.*') ? 'mbn-active' : '' }}" href="{{ route('rooms.index') }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20.5V5.8a1.8 1.8 0 0 1 1.3-1.7l11-3A1.8 1.8 0 0 1 18.5 2.8v17.7M2.5 20.5h19"/></svg>
-        <span>Ruangan</span>
-    </a>
-    @endif
-    <a class="mbn-item {{ request()->routeIs('complaints.*') ? 'mbn-active' : '' }}" href="{{ route('complaints.index') }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21 20H3L12 3.5Z"/><path d="M12 9v4.5M12 17h.01"/></svg>
-        <span>Pengaduan</span>
-    </a>
-    <button class="mbn-item" id="mbnMenuBtn" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        <span>Menu</span>
-    </button>
-</nav>
 <script>
     const appShell = document.querySelector('.app-shell');
-    const sidebarToggle = document.querySelector('.sidebar-toggle-desktop');
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
 
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', () => {
-            const collapsed = appShell.classList.toggle('sidebar-collapsed');
-            const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
-            sidebarToggle.innerHTML = collapsed
-                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
-                : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
-            sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
-            sidebarToggle.setAttribute('aria-label', label);
-            sidebarToggle.title = label;
-        });
-    }
+    sidebarToggle.addEventListener('click', () => {
+        const collapsed = appShell.classList.toggle('sidebar-collapsed');
+        const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
 
-    // Mobile sidebar open/close
-    function openMobileSidebar() {
-        appShell.classList.add('mobile-sidebar-open');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeMobileSidebar() {
-        appShell.classList.remove('mobile-sidebar-open');
-        document.body.style.overflow = '';
-    }
-
-    const mobileNavToggle = document.getElementById('mobileNavToggle');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-    const sidebarCloseMobile = document.getElementById('sidebarCloseMobile');
-    const mbnMenuBtn = document.getElementById('mbnMenuBtn');
-
-    if (mobileNavToggle) mobileNavToggle.addEventListener('click', openMobileSidebar);
-    if (mbnMenuBtn) mbnMenuBtn.addEventListener('click', openMobileSidebar);
-    if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
-    if (sidebarCloseMobile) sidebarCloseMobile.addEventListener('click', closeMobileSidebar);
+        sidebarToggle.innerHTML = collapsed
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
+        sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+        sidebarToggle.setAttribute('aria-label', label);
+        sidebarToggle.title = label;
+    });
 </script>
 </body>
 </html>
