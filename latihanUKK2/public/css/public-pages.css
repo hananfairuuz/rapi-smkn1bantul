@@ -11,10 +11,11 @@
     align-items: center !important;
     justify-content: space-between !important;
     gap: 20px !important;
-    padding: 16px 36px !important;
+    padding: 22px 36px !important;
     color: #ffffff !important;
     background: #091931 !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
 }
 
 /* Header Brand Link Fix (Tanpa Garis Pinggir / Border) */
@@ -46,22 +47,22 @@
 }
 .public-header .public-brand-link img,
 .public-brand img {
-    flex: 0 0 42px !important;
-    width: 42px !important;
-    height: 42px !important;
+    flex: 0 0 46px !important;
+    width: 46px !important;
+    height: 46px !important;
     object-fit: contain !important;
 }
 .public-header h1 {
     margin: 0 !important;
-    font-size: 19px !important;
+    font-size: 20px !important;
     font-weight: 800 !important;
     line-height: 1.25 !important;
     letter-spacing: -0.01em !important;
     color: #ffffff !important;
 }
 .public-header p {
-    margin: 2px 0 0 !important;
-    font-size: 12px !important;
+    margin: 3px 0 0 !important;
+    font-size: 12.5px !important;
     color: #94a3b8 !important;
     line-height: 1.25 !important;
 }
@@ -74,10 +75,10 @@
 }
 .public-header .public-nav-link {
     border: 1px solid transparent !important;
-    padding: 8px 16px !important;
+    padding: 9px 18px !important;
     border-radius: 8px !important;
     color: #cbd5e1 !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
@@ -102,16 +103,16 @@
     align-items: center !important;
 }
 .public-header .public-login-button {
-    padding: 8px 20px !important;
+    padding: 9px 22px !important;
     border: 1px solid #f59e0b !important;
     border-radius: 8px !important;
     color: #0f172a !important;
     background: #f59e0b !important;
     font-weight: 750 !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35) !important;
 }
 .public-header .public-login-button:hover {
     background: #d97706 !important;
