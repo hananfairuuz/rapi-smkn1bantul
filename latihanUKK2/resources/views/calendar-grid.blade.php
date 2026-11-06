@@ -27,14 +27,26 @@
         </div>
 
         <form method="GET" action="{{ route('calendar') }}" class="calendar-search-form" style="display: flex; gap: 8px; max-width: 400px; width: 100%;">
-            <input type="hidden" name="month" value="{{ $month->format('Y-m') }}">
             <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari acara atau ruangan..." class="form-control" style="flex: 1; padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
             <button type="submit" class="btn primary" style="white-space: nowrap; padding: 7px 14px; font-size: 13px;">Cari</button>
             @if(!empty($search))
-                <a href="{{ route('calendar', ['month' => $month->format('Y-m')]) }}" class="btn secondary" style="padding: 7px 12px; font-size: 13px;">Reset</a>
+                <a href="{{ route('calendar', ['month' => today()->format('Y-m')]) }}" class="btn secondary" style="padding: 7px 12px; font-size: 13px;">Reset</a>
             @endif
         </form>
     </div>
+
+    @if(!empty($search))
+        @if(!empty($targetDate))
+            <div style="margin: 0 0 16px; padding: 10px 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #065f46; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 13px;">
+                <span>🎯 Ditemukan untuk "<strong>{{ $search }}</strong>" pada tanggal <strong>{{ \Carbon\Carbon::parse($targetDate)->locale('id')->translatedFormat('d F Y') }}</strong> (Kalender otomatis diarahkan ke bulan ini).</span>
+                <a href="{{ route('calendar', ['month' => today()->format('Y-m')]) }}" style="color: #047857; font-weight: 700; text-decoration: underline;">Kembali ke Hari Ini</a>
+            </div>
+        @else
+            <div style="margin: 0 0 16px; padding: 10px 14px; background: #fffbe8; border: 1px solid #fde047; border-radius: 8px; color: #854d0e; font-size: 13px;">
+                Tidak ditemukan acara atau hari libur dengan kata kunci "<strong>{{ $search }}</strong>".
+            </div>
+        @endif
+    @endif
 
     <div class="calendar-scroll">
         <div class="calendar-grid">
@@ -52,7 +64,7 @@
                 @php($dayEvents = $events->filter(fn ($event) => $event->date->toDateString() <= $calendarDate->toDateString() && $event->endAt()->toDateString() >= $calendarDate->toDateString()))
                 @php($dateKey = $calendarDate->toDateString())
                 @php($isWeekend = $calendarDate->isWeekend())
-                <div class="calendar-day {{ $calendarDate->isToday() ? 'today' : '' }} {{ $isWeekend ? 'weekend' : '' }} {{ isset($holidays[$dateKey]) ? 'holiday' : '' }}" @if(isset($holidays[$dateKey])) title="{{ $holidays[$dateKey] }}" @endif>
+                <div class="calendar-day {{ $calendarDate->isToday() ? 'today' : '' }} {{ $isWeekend ? 'weekend' : '' }} {{ isset($holidays[$dateKey]) ? 'holiday' : '' }} {{ !empty($targetDate) && $targetDate === $dateKey ? 'search-matched' : '' }}" @if(isset($holidays[$dateKey])) title="{{ $holidays[$dateKey] }}" @endif>
                     <span class="day-number">{{ $date }}</span>
                     @if(isset($holidays[$dateKey]))
                         <div class="calendar-event calendar-event--holiday" title="{{ $holidays[$dateKey] }} (Hari Libur Nasional)">

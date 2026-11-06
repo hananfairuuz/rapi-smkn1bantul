@@ -191,7 +191,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    textInputAction: TextInputAction.search,
                     onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    onSubmitted: (val) {
+                      final query = val.trim().toLowerCase();
+                      if (query.isEmpty) return;
+                      final matchedHolidays = HolidayData.searchHolidays(query, _month.year);
+                      if (matchedHolidays.isNotEmpty) {
+                        final parts = matchedHolidays.first.key.split('-');
+                        final dt = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+                        _selectDateAndMonth(dt);
+                        return;
+                      }
+                      final matchedEvents = events.where((event) {
+                        final ev = asMap(event);
+                        final title = ev['title']?.toString().toLowerCase() ?? '';
+                        final room = asMap(ev['room'])['name']?.toString().toLowerCase() ?? '';
+                        final organizer = ev['organizer_role']?.toString().toLowerCase() ?? '';
+                        final desc = ev['description']?.toString().toLowerCase() ?? '';
+                        return title.contains(query) || room.contains(query) || organizer.contains(query) || desc.contains(query);
+                      }).toList();
+                      if (matchedEvents.isNotEmpty) {
+                        final ev = asMap(matchedEvents.first);
+                        final dateStr = ev['date']?.toString();
+                        if (dateStr != null && dateStr.length >= 10) {
+                          final dt = DateTime.parse(dateStr.substring(0, 10));
+                          _selectDateAndMonth(dt);
+                        }
+                      }
+                    },
                     decoration: InputDecoration(
                       hintText: 'Cari acara, ruangan, atau libur nasional...',
                       hintStyle: const TextStyle(color: muted, fontSize: 13),
@@ -803,8 +831,12 @@ class _HolidayListTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${formatDate(dt)} · Hari Libur Nasional',
-                    style: const TextStyle(fontSize: 11.5, color: muted),
+                    '${formatDate(dt)} · Ketuk untuk langsung diarahkan ➜',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: dangerText,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

@@ -173,6 +173,8 @@ th { color: var(--muted); font-size: 11px; letter-spacing: .05em; text-transform
 .calendar-weekday.weekend, .calendar-day.weekend .day-number, .calendar-day.holiday .day-number { color: var(--danger); }
 .calendar-day { min-height: 112px; padding: 8px; border-right: 2px solid #d1d5db; border-bottom: 2px solid #d1d5db; }
 .calendar-day.empty { background: #faf9f5; }
+.calendar-day.search-matched { box-shadow: inset 0 0 0 3px #dc2626 !important; background: #fff1f2 !important; }
+.calendar-day.search-matched .day-number { color: #dc2626 !important; font-weight: 900 !important; }
 .calendar-day.today { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
 .day-number { font-size: 13px; font-weight: 700; }
 .today .day-number { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: white; background: var(--accent); }

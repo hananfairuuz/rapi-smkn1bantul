@@ -223,6 +223,49 @@ class MobileApiController extends Controller
             : today()->startOfMonth();
 
         $search = trim($data['search'] ?? '');
+        $targetDate = null;
+
+        if ($search !== '') {
+            $searchLower = strtolower($search);
+            $baseYear = (int) $month->year;
+
+            // 1. Periksa libur nasional
+            foreach ([$baseYear, $baseYear + 1, $baseYear - 1] as $yr) {
+                try {
+                    $yrHolidays = $holidayCalendar->holidaysForYear($yr);
+                } catch (\Throwable) {
+                    $yrHolidays = $holidayCalendar->getBuiltinHolidaysForYear($yr);
+                }
+                foreach ($yrHolidays as $dateStr => $holidayTitle) {
+                    if (str_contains(strtolower($holidayTitle), $searchLower)) {
+                        $targetDate = $dateStr;
+                        break 2;
+                    }
+                }
+            }
+
+            // 2. Periksa agenda ruangan
+            $matchedEvent = Event::with(['room', 'user.role'])
+                ->where('status', 'approved')
+                ->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhereHas('room', function ($rq) use ($search) {
+                            $rq->where('name', 'like', "%{$search}%")
+                                ->orWhere('location', 'like', "%{$search}%");
+                        });
+                })
+                ->orderBy('date')
+                ->first();
+
+            if ($matchedEvent !== null && ($targetDate === null || $matchedEvent->date->toDateString() < $targetDate)) {
+                $targetDate = $matchedEvent->date->toDateString();
+            }
+
+            if ($targetDate !== null) {
+                $month = CarbonImmutable::parse($targetDate)->startOfMonth();
+            }
+        }
 
         $holidays = [];
         try {
@@ -232,33 +275,21 @@ class MobileApiController extends Controller
         }
 
         $eventsQuery = Event::with(['room:id,name,location', 'user.role'])
-            ->where('status', 'approved');
-
-        if ($search !== '') {
-            $eventsQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('room', function ($rq) use ($search) {
-                        $rq->where('name', 'like', "%{$search}%")
-                            ->orWhere('location', 'like', "%{$search}%");
+            ->where('status', 'approved')
+            ->whereDate('date', '<=', $month->endOfMonth())
+            ->where(function ($query) use ($month) {
+                $monthStart = $month->startOfMonth();
+                $query->whereDate('end_date', '>=', $monthStart)
+                    ->orWhere(function ($query) use ($monthStart) {
+                        $query->whereNull('end_date')
+                            ->whereDate('date', '>=', $monthStart);
+                    })
+                    ->orWhere(function ($query) use ($monthStart) {
+                        $query->whereNull('end_date')
+                            ->whereColumn('end_time', '<', 'start_time')
+                            ->whereDate('date', '>=', $monthStart->copy()->subDay());
                     });
             });
-        } else {
-            $eventsQuery->whereDate('date', '<=', $month->endOfMonth())
-                ->where(function ($query) use ($month) {
-                    $monthStart = $month->startOfMonth();
-                    $query->whereDate('end_date', '>=', $monthStart)
-                        ->orWhere(function ($query) use ($monthStart) {
-                            $query->whereNull('end_date')
-                                ->whereDate('date', '>=', $monthStart);
-                        })
-                        ->orWhere(function ($query) use ($monthStart) {
-                            $query->whereNull('end_date')
-                                ->whereColumn('end_time', '<', 'start_time')
-                                ->whereDate('date', '>=', $monthStart->copy()->subDay());
-                        });
-                });
-        }
 
         $events = $eventsQuery->orderBy('date')->orderBy('start_time')->get()
             ->each(fn (Event $event) => $event->setAttribute(
@@ -268,6 +299,7 @@ class MobileApiController extends Controller
 
         return response()->json([
             'month' => $month->format('Y-m'),
+            'target_date' => $targetDate,
             'holidays' => $holidays,
             'events' => $events,
         ]);
