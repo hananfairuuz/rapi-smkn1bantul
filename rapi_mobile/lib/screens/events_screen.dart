@@ -600,6 +600,8 @@ class _EventFormState extends State<EventForm> {
   String _endLesson = '2';
   TimeOfDay _startCustomTime = const TimeOfDay(hour: 17, minute: 45);
   TimeOfDay _endCustomTime = const TimeOfDay(hour: 6, minute: 0);
+  final _roomSearchController = TextEditingController();
+  String _roomSearchQuery = '';
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -623,6 +625,7 @@ class _EventFormState extends State<EventForm> {
     _description.dispose();
     _borrower.dispose();
     _whatsapp.dispose();
+    _roomSearchController.dispose();
     super.dispose();
   }
 
@@ -848,6 +851,38 @@ class _EventFormState extends State<EventForm> {
                         ],
                       ),
                       const SizedBox(height: 6),
+                      if (_rooms.length > 4) ...[
+                        SizedBox(
+                          height: 38,
+                          child: TextField(
+                            controller: _roomSearchController,
+                            decoration: InputDecoration(
+                              hintText: 'Cari ruangan atau lokasi...',
+                              hintStyle: const TextStyle(fontSize: 12),
+                              prefixIcon: const Icon(Icons.search, size: 16),
+                              suffixIcon: _roomSearchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 14),
+                                      onPressed: () {
+                                        _roomSearchController.clear();
+                                        setState(() => _roomSearchQuery = '');
+                                      },
+                                    )
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+                              filled: true,
+                              fillColor: surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: inputBorder),
+                              ),
+                            ),
+                            style: const TextStyle(fontSize: 12.5),
+                            onChanged: (val) => setState(() => _roomSearchQuery = val.trim().toLowerCase()),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
                       Container(
                         constraints: const BoxConstraints(maxHeight: 180),
                         decoration: BoxDecoration(
@@ -855,50 +890,99 @@ class _EventFormState extends State<EventForm> {
                           border: Border.all(color: inputBorder),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          itemCount: _rooms.length,
-                          separatorBuilder: (_, __) => const Divider(
-                            height: 1,
-                            indent: 48,
-                            color: line,
-                          ),
-                          itemBuilder: (context, index) {
-                            final room = asMap(_rooms[index]);
-                            final id = room['id'] as int;
-                            final isSelected = _selectedRoomIds.contains(id);
-                            return CheckboxListTile(
-                              value: isSelected,
-                              dense: true,
-                              activeColor: accent,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              title: Text(
-                                room['name']?.toString() ?? '',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight:
-                                      isSelected ? FontWeight.w800 : FontWeight.w600,
-                                  color: isSelected ? ink : const Color(0xFF334155),
+                        child: Builder(
+                          builder: (context) {
+                            final visibleRooms = _rooms.where((r) {
+                              if (_roomSearchQuery.isEmpty) return true;
+                              final map = asMap(r);
+                              final name = map['name']?.toString().toLowerCase() ?? '';
+                              final loc = map['location']?.toString().toLowerCase() ?? '';
+                              return name.contains(_roomSearchQuery) || loc.contains(_roomSearchQuery);
+                            }).toList();
+
+                            if (visibleRooms.isEmpty) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Text(
+                                    'Tidak ada ruangan yang cocok dengan pencarian.',
+                                    style: TextStyle(fontSize: 12, color: muted),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
+                              );
+                            }
+
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              itemCount: visibleRooms.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                indent: 48,
+                                color: line,
                               ),
-                              subtitle: Text(
-                                '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']} orang' : ''}',
-                                style: const TextStyle(fontSize: 11, color: muted),
-                              ),
-                              onChanged: (checked) {
-                                setState(() {
-                                  if (checked == true) {
-                                    _selectedRoomIds.add(id);
-                                  } else {
-                                    _selectedRoomIds.remove(id);
-                                  }
-                                });
+                              itemBuilder: (context, index) {
+                                final room = asMap(visibleRooms[index]);
+                                final id = room['id'] as int;
+                                final isSelected = _selectedRoomIds.contains(id);
+                                return CheckboxListTile(
+                                  value: isSelected,
+                                  dense: true,
+                                  activeColor: accent,
+                                  controlAffinity: ListTileControlAffinity.leading,
+                                  title: Text(
+                                    room['name']?.toString() ?? '',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight:
+                                          isSelected ? FontWeight.w800 : FontWeight.w600,
+                                      color: isSelected ? ink : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']} orang' : ''}',
+                                    style: const TextStyle(fontSize: 11, color: muted),
+                                  ),
+                                  onChanged: (checked) {
+                                    setState(() {
+                                      if (checked == true) {
+                                        _selectedRoomIds.add(id);
+                                      } else {
+                                        _selectedRoomIds.remove(id);
+                                      }
+                                    });
+                                  },
+                                );
                               },
                             );
                           },
                         ),
                       ),
+                      if (_selectedRoomIds.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            for (final r in _rooms)
+                              if (_selectedRoomIds.contains(asMap(r)['id']))
+                                Chip(
+                                  label: Text(
+                                    asMap(r)['name']?.toString() ?? '',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                                  ),
+                                  deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFF92400E)),
+                                  onDeleted: () => setState(() => _selectedRoomIds.remove(asMap(r)['id'] as int)),
+                                  backgroundColor: const Color(0xFFFEF3C7),
+                                  side: const BorderSide(color: Color(0xFFFDE68A)),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                          ],
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 12),
                     TextFormField(
