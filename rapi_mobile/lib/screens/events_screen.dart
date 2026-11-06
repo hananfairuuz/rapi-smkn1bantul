@@ -594,7 +594,7 @@ class _EventFormState extends State<EventForm> {
   late DateTime _date;
   late DateTime _endDate;
   List<dynamic> _rooms = [];
-  int? _roomId;
+  final Set<int> _selectedRoomIds = {};
   Map<String, dynamic> _periods = {};
   String _startLesson = '1';
   String _endLesson = '2';
@@ -636,7 +636,9 @@ class _EventFormState extends State<EventForm> {
       setState(() {
         _rooms = results[0] as List<dynamic>;
         _periods = asMap((results[1] as Map<String, dynamic>)['periods']);
-        _roomId = _rooms.isEmpty ? null : asMap(_rooms.first)['id'] as int;
+        if (_rooms.isNotEmpty && _selectedRoomIds.isEmpty) {
+          _selectedRoomIds.add(asMap(_rooms.first)['id'] as int);
+        }
         _loading = false;
       });
     } catch (error) {
@@ -692,14 +694,20 @@ class _EventFormState extends State<EventForm> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _roomId == null) return;
+    if (!_formKey.currentState!.validate() || _selectedRoomIds.isEmpty) {
+      if (_selectedRoomIds.isEmpty) {
+        setState(() => _error = 'Pilih minimal satu ruangan yang akan dipinjam.');
+      }
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
       final fields = <String, String>{
-        'room_id': '$_roomId',
+        'room_id': _selectedRoomIds.first.toString(),
+        'room_ids': _selectedRoomIds.join(','),
         'title': _title.text.trim(),
         'borrower_name': _borrower.text.trim(),
         'borrower_whatsapp': _whatsapp.text.trim(),
@@ -772,21 +780,126 @@ class _EventFormState extends State<EventForm> {
                       const ErrorBanner(
                         message: 'Belum ada ruangan yang tersedia.',
                       )
-                    else
-                      DropdownButtonFormField<int>(
-                        value: _roomId,
-                        decoration: const InputDecoration(labelText: 'Ruangan'),
-                        items: [
-                          for (final room in _rooms)
-                            DropdownMenuItem(
-                              value: asMap(room)['id'] as int,
-                              child: Text(
-                                '${asMap(room)['name']}${asMap(room)['location'] != null ? ' — ${asMap(room)['location']}' : ''}',
+                    else ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Pilih Ruangan',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: ink,
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: accentSoft,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0xFFFDE68A),
+                                  ),
+                                ),
+                                child: Text(
+                                  '${_selectedRoomIds.length} dipilih',
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: accentHover,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    if (_selectedRoomIds.length == _rooms.length) {
+                                      _selectedRoomIds.clear();
+                                    } else {
+                                      for (final r in _rooms) {
+                                        _selectedRoomIds.add(asMap(r)['id'] as int);
+                                      }
+                                    }
+                                  });
+                                },
+                                style: TextButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ),
+                                child: Text(
+                                  _selectedRoomIds.length == _rooms.length
+                                      ? 'Batal Semua'
+                                      : 'Pilih Semua',
+                                  style: const TextStyle(fontSize: 11.5),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
-                        onChanged: (value) => setState(() => _roomId = value),
                       ),
+                      const SizedBox(height: 6),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 180),
+                        decoration: BoxDecoration(
+                          color: surface,
+                          border: Border.all(color: inputBorder),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          itemCount: _rooms.length,
+                          separatorBuilder: (_, __) => const Divider(
+                            height: 1,
+                            indent: 48,
+                            color: line,
+                          ),
+                          itemBuilder: (context, index) {
+                            final room = asMap(_rooms[index]);
+                            final id = room['id'] as int;
+                            final isSelected = _selectedRoomIds.contains(id);
+                            return CheckboxListTile(
+                              value: isSelected,
+                              dense: true,
+                              activeColor: accent,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              title: Text(
+                                room['name']?.toString() ?? '',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight:
+                                      isSelected ? FontWeight.w800 : FontWeight.w600,
+                                  color: isSelected ? ink : const Color(0xFF334155),
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${room['location'] ?? 'SMKN 1 Bantul'}${room['capacity'] != null ? ' · Kapasitas ${room['capacity']}' : ''}',
+                                style: const TextStyle(fontSize: 11, color: muted),
+                              ),
+                              onChanged: (checked) {
+                                setState(() {
+                                  if (checked == true) {
+                                    _selectedRoomIds.add(id);
+                                  } else {
+                                    _selectedRoomIds.remove(id);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _title,
@@ -914,7 +1027,10 @@ class _EventFormState extends State<EventForm> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: _saving || _rooms.isEmpty ? null : _submit,
+                      onPressed:
+                          _saving || _rooms.isEmpty || _selectedRoomIds.isEmpty
+                              ? null
+                              : _submit,
                       child: _saving
                           ? const SizedBox(
                               width: 20,
@@ -924,9 +1040,11 @@ class _EventFormState extends State<EventForm> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Kirim Pengajuan Agenda',
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                          : Text(
+                              _selectedRoomIds.length > 1
+                                  ? 'Ajukan ${_selectedRoomIds.length} Ruangan Sekaligus'
+                                  : 'Kirim Pengajuan Agenda',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                     ),
                   ],

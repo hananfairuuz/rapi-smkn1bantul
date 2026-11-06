@@ -11,6 +11,7 @@ class CalendarScreen extends StatefulWidget {
     this.onLogin,
     this.currentUser,
     this.onReportDamage,
+    this.isEmbedded = false,
     super.key,
   });
 
@@ -18,6 +19,7 @@ class CalendarScreen extends StatefulWidget {
   final VoidCallback? onLogin;
   final Map<String, dynamic>? currentUser;
   final ValueChanged<Map<String, dynamic>>? onReportDamage;
+  final bool isEmbedded;
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -746,7 +748,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _wrapPage(Widget body) {
-    if (widget.onLogin == null) return body;
+    if (widget.isEmbedded || widget.onLogin == null) {
+      return BrandWatermark(child: body);
+    }
     return Scaffold(
       backgroundColor: canvas,
       appBar: AppBar(

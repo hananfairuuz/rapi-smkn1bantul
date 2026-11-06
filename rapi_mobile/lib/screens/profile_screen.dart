@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import '../constants.dart';
 import '../widgets/common_widgets.dart';
+import 'public_about_screen.dart';
+import 'public_help_screen.dart';
+import 'public_services_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
@@ -152,7 +155,67 @@ class ProfileScreen extends StatelessWidget {
           icon: const Icon(Icons.edit_outlined, size: 18),
           label: const Text('Ubah Profil Akun'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
+        const Text(
+          'Informasi & Layanan',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: ink,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.info_outline, color: accent),
+                title: const Text('Tentang RAPI-Sekolah', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Tentang RAPI-Sekolah')),
+                      body: const PublicAboutScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1, color: line),
+              ListTile(
+                leading: const Icon(Icons.layers_outlined, color: Color(0xFF10B981)),
+                title: const Text('Fitur Layanan & SOP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Fitur Layanan & SOP')),
+                      body: const PublicServicesScreen(),
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 1, color: line),
+              ListTile(
+                leading: const Icon(Icons.support_agent_outlined, color: Color(0xFF2563EB)),
+                title: const Text('Pusat Bantuan & Tata Tertib', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Pusat Bantuan & Kontak')),
+                      body: const PublicHelpScreen(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             foregroundColor: danger,

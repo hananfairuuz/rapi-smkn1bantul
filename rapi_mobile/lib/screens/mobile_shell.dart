@@ -35,9 +35,9 @@ class _MobileShellState extends State<MobileShell> {
 
   bool get _isPic => widget.user['role'] == 'pic';
   bool get _canManageEvents =>
-      ['guru', 'organisasi'].contains(widget.user['role']);
+      ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
   bool get _canCreateComplaints =>
-      ['guru', 'organisasi'].contains(widget.user['role']);
+      ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
 
   List<_NavDestination> get _destinations => [
     const _NavDestination('Beranda', Icons.dashboard_outlined, Icons.dashboard),

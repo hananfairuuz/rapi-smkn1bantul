@@ -20,7 +20,7 @@ class ApiService {
   ApiService()
     : _baseUrl = const String.fromEnvironment(
         'API_BASE_URL',
-        defaultValue: 'http://127.0.0.1:8000/api',
+        defaultValue: 'https://rapi-smkn1bantul.web.id/api',
       ) {
     final apiUri = Uri.tryParse(_baseUrl);
     if (kReleaseMode &&
@@ -55,11 +55,6 @@ class ApiService {
     );
     final data = _decode(response);
     final user = Map<String, dynamic>.from(data['user'] as Map);
-    if (user['role'] == 'admin') {
-      throw const ApiException(
-        'Akun Admin hanya dapat masuk melalui versi desktop.',
-      );
-    }
     _token = data['token'] as String?;
     if (_token == null) {
       throw const ApiException('Server tidak mengembalikan token masuk.');
@@ -275,8 +270,7 @@ class ApiService {
           ? 'Jika HP tersambung melalui USB, jalankan '
                 '`adb reverse tcp:8000 tcp:8000`. Jika melalui Wi-Fi, '
                 'gunakan IP LAN komputer pada API_BASE_URL.'
-          : 'Pastikan HP dan komputer berada di jaringan yang sama dan '
-                'port API diizinkan oleh Windows Firewall.';
+          : 'Pastikan koneksi internet HP aktif dan server online ($_baseUrl) dapat diakses.';
       throw ApiException(
         'Tidak dapat terhubung ke API ($_baseUrl). Pastikan server Laravel '
         'aktif. $connectionHint ${error.message}',

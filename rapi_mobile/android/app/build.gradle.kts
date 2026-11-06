@@ -19,14 +19,14 @@ android {
     ndkVersion = "27.0.12077973"
 
     signingConfigs {
-        create("release") {
-            val storeFilePath = signingProperties.getProperty("storeFile")
-            if (!storeFilePath.isNullOrBlank()) {
+        val storeFilePath = signingProperties.getProperty("storeFile")
+        if (!storeFilePath.isNullOrBlank()) {
+            create("release") {
                 storeFile = rootProject.file(storeFilePath)
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
             }
-            storePassword = signingProperties.getProperty("storePassword")
-            keyAlias = signingProperties.getProperty("keyAlias")
-            keyPassword = signingProperties.getProperty("keyPassword")
         }
     }
 
@@ -55,7 +55,12 @@ android {
         }
         release {
             manifestPlaceholders["usesCleartextTraffic"] = "false"
-            signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.findByName("release")
+            signingConfig = if (releaseSigning?.storeFile != null) {
+                releaseSigning
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

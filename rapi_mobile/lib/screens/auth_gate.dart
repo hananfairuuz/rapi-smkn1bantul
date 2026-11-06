@@ -6,6 +6,7 @@ import 'calendar_screen.dart';
 import 'forgot_password_screen.dart';
 import 'login_screen.dart';
 import 'mobile_shell.dart';
+import 'public_shell.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -35,13 +36,7 @@ class _AuthGateState extends State<AuthGate> {
       final token = await _api.restoreToken();
       if (token != null) {
         final user = await _api.getUser();
-        if (user['role'] == 'admin') {
-          await _api.logout();
-          _user = null;
-          _restoreError = 'Akun Admin hanya dapat masuk melalui versi desktop.';
-        } else {
-          _user = user;
-        }
+        _user = user;
       }
     } on ApiException catch (error) {
       _restoreError = error.message;
@@ -54,15 +49,6 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _onLogin(Map<String, dynamic> user) {
-    if (user['role'] == 'admin') {
-      _api.logout();
-      setState(() {
-        _user = null;
-        _restoreError = 'Akun Admin hanya dapat masuk melalui versi desktop.';
-        _showLogin = true;
-      });
-      return;
-    }
     setState(() {
       _user = user;
       _restoreError = null;
@@ -123,9 +109,9 @@ class _AuthGateState extends State<AuthGate> {
         );
       }
 
-      // Default state: show public Calendar first!
+      // Default state: show public navigation shell (Kalender, Tentang, Layanan, Bantuan)
       if (!_showLogin) {
-        return CalendarScreen(
+        return PublicShell(
           api: _api,
           onLogin: () => setState(() => _showLogin = true),
         );

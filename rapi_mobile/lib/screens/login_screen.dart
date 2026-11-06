@@ -78,26 +78,53 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!didPop) widget.onBackToCalendar();
       },
       child: Scaffold(
-        backgroundColor: canvas,
-        body: SafeArea(
-          child: BrandWatermark(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Card(
-                    color: sidebar,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(
-                        color: Color(0xFF26384D),
-                        width: 2,
+        backgroundColor: sidebar,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Foto gedung SMK Negeri 1 Bantul (seperti di versi desktop)
+            Image.asset(
+              'assets/images/school-login-background.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+
+            // Lapisan overlay gelap semi-transparan seperti di desktop
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF071224).withOpacity(0.42),
+                    const Color(0xFF071224).withOpacity(0.58),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+
+            // Kartu login
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Card(
+                      color: sidebar,
+                      elevation: 16,
+                      shadowColor: Colors.black.withOpacity(0.6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(
+                          color: Color(0xFF26384D),
+                          width: 1.5,
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Form(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -254,8 +281,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
+        ],
       ),
-    );
+    ),
+  );
   }
 }
