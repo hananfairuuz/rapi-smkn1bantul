@@ -126,15 +126,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 
-.btn, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle) {
+.btn, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn) {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 13px;
     border: 1px solid var(--accent); border-radius: 7px; color: #fff; background: var(--accent);
     text-decoration: none; cursor: pointer; font-weight: 650; transition: background .16s ease, border-color .16s ease;
 }
-.btn:hover, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.btn:hover, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn):hover { border-color: var(--accent-hover); background: var(--accent-hover); }
 button:disabled, .btn[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
-.btn.danger, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle).danger { border-color: var(--danger); color: white; background: var(--danger); }
-.btn.danger:hover, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle).danger:hover { border-color: var(--danger); background: var(--danger); }
+.btn.danger, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn).danger { border-color: var(--danger); color: white; background: var(--danger); }
+.btn.danger:hover, button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn).danger:hover { border-color: var(--danger); background: var(--danger); }
 .btn.warn, button.warn { border-color: var(--warning); color: white; background: var(--warning); }
 .secondary, .btn.secondary { border-color: #d7d1c6; color: var(--ink); background: var(--surface); }
 .secondary:hover, .btn.secondary:hover { border-color: #c6bdaf; background: #f5f1e9; }
@@ -623,27 +623,27 @@ a {
 }
 
 .btn,
-button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle) {
+button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn) {
     border-color: var(--accent);
     color: #ffffff;
     background: var(--accent);
 }
 
 .btn:hover,
-button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):hover {
+button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn):hover {
     border-color: var(--accent-hover);
     background: var(--accent-hover);
 }
 
 .btn.danger,
-button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle).danger {
+button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn).danger {
     border-color: var(--danger);
     color: #ffffff;
     background: var(--danger);
 }
 
 .btn.danger:hover,
-button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle).danger:hover {
+button:not(.nav-item):not(.sidebar-toggle):not(.password-toggle):not(.notif-bell-btn):not(.notif-mark-all-btn):not(.notif-check-btn).danger:hover {
     border-color: var(--danger);
     background: var(--danger);
 }
@@ -1316,51 +1316,199 @@ th {
 }
 
 /* Notification Bell & Dropdown */
-.notif-wrapper { position: relative; }
+.notif-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+button.notif-bell-btn,
 .notif-bell-btn {
-    position: relative; width: 38px; height: 38px; border-radius: 50%;
-    border: 1px solid var(--line); background: var(--surface);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--muted); transition: all 0.16s ease;
-    padding: 0;
+    all: unset;
+    box-sizing: border-box;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50% !important;
+    border: 1px solid var(--line) !important;
+    background: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    color: #64748b !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transition: all 0.16s ease !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
-.notif-bell-btn:hover { color: var(--ink); background: #f1f5f9; }
-.notif-bell-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+button.notif-bell-btn:hover,
+.notif-bell-btn:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.notif-bell-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    display: block !important;
+    margin: auto !important;
+}
+
 .notif-badge {
-    position: absolute; top: -3px; right: -3px;
-    background: #ef4444; color: white; border-radius: 999px;
-    font-size: 10px; font-weight: 800; padding: 1px 5px; min-width: 16px; text-align: center;
-    border: 2px solid #fff; line-height: 1.2;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid #ffffff !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.35) !important;
 }
+
 .notif-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0; width: 320px;
-    max-width: calc(100vw - 32px); background: #fff; border: 1px solid var(--line);
-    border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.12); z-index: 100;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+    z-index: 99999;
     overflow: hidden;
 }
+
 .notif-dropdown-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 14px; border-bottom: 1px solid var(--line); background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: #f8fafc;
 }
-.notif-dropdown-header strong { font-size: 13.5px; }
+
+.notif-dropdown-header strong {
+    font-size: 13.5px;
+    color: var(--ink);
+}
+
+button.notif-mark-all-btn,
 .notif-mark-all-btn {
-    border: 0; background: none; color: var(--accent); font-size: 11px;
-    cursor: pointer; padding: 0; font-weight: 600;
+    all: unset;
+    border: none !important;
+    background: transparent !important;
+    color: #2563eb !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
 }
-.notif-mark-all-btn:hover { text-decoration: underline; }
-.notif-dropdown-list { max-height: 340px; overflow-y: auto; }
+
+button.notif-mark-all-btn:hover,
+.notif-mark-all-btn:hover {
+    text-decoration: underline !important;
+    color: #1d4ed8 !important;
+}
+
+.notif-dropdown-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
 .notif-item {
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
-    padding: 10px 14px; border-bottom: 1px solid #f1f5f9; transition: background 0.16s ease;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+    text-decoration: none;
+    color: inherit;
 }
-.notif-item:hover { background: #f8fafc; }
-.notif-item.unread { background: #f0fdf4; border-left: 3px solid #16a34a; }
-.notif-item strong { display: block; font-size: 12.5px; margin-bottom: 2px; }
-.notif-item p { margin: 0 0 3px; font-size: 12px; color: #475569; line-height: 1.35; }
-.notif-item small { font-size: 10.5px; color: var(--muted); }
+
+.notif-item:hover {
+    background: #f8fafc;
+}
+
+.notif-item.unread {
+    background: #f0fdf4;
+    border-left: 3.5px solid #16a34a;
+}
+
+.notif-item-link {
+    flex: 1;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    cursor: pointer;
+}
+
+.notif-item strong {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink);
+    margin-bottom: 3px;
+}
+
+.notif-item p {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.notif-item small {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+button.notif-check-btn,
 .notif-check-btn {
-    border: 0; background: none; color: var(--muted); font-size: 14px;
-    cursor: pointer; padding: 2px 4px; border-radius: 4px;
+    all: unset;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    background: #e2e8f0 !important;
+    color: #475569 !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: all 0.15s ease !important;
 }
-.notif-check-btn:hover { color: #16a34a; background: #e2e8f0; }
-.notif-empty { padding: 24px 16px; text-align: center; color: var(--muted); font-size: 12.5px; }
+
+button.notif-check-btn:hover,
+.notif-check-btn:hover {
+    background: #16a34a !important;
+    color: #ffffff !important;
+}
+
+.notif-empty {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+}

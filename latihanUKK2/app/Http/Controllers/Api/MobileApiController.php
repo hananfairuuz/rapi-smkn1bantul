@@ -209,7 +209,7 @@ class MobileApiController extends Controller
             'recent_events' => Event::with(['room:id,name', 'user:id,name'])
                 ->orderByDesc('date')->orderByDesc('start_time')->take(5)->get(),
             'notifications' => SystemNotification::where('user_id', $request->user()->id)
-                ->whereNull('read_at')->latest()->get(['id', 'title', 'message', 'created_at']),
+                ->whereNull('read_at')->latest()->get(['id', 'event_id', 'title', 'message', 'created_at']),
         ]);
     }
 

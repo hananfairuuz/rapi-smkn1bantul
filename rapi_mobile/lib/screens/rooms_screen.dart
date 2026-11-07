@@ -24,6 +24,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   late Future<List<dynamic>> _rooms;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  String _availabilityFilter = 'all';
 
   @override
   void initState() {
@@ -325,8 +326,20 @@ class _RoomsScreenState extends State<RoomsScreen> {
             final name = map['name']?.toString().toLowerCase() ?? '';
             final location = map['location']?.toString().toLowerCase() ?? '';
             final q = _searchQuery.toLowerCase();
-            return name.contains(q) || location.contains(q);
+            final matchesQuery = name.contains(q) || location.contains(q);
+
+            final isInUse = map['is_in_use'] == true;
+            final matchesAvailability = switch (_availabilityFilter) {
+              'available' => !isInUse,
+              'in_use' => isInUse,
+              _ => true,
+            };
+
+            return matchesQuery && matchesAvailability;
           }).toList();
+
+          final availableCount = allRooms.where((r) => asMap(r)['is_in_use'] != true).length;
+          final inUseCount = allRooms.where((r) => asMap(r)['is_in_use'] == true).length;
 
           return RefreshIndicator(
             onRefresh: _reload,
@@ -356,12 +369,57 @@ class _RoomsScreenState extends State<RoomsScreen> {
                   ),
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                 ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ChoiceChip(
+                        label: Text('Semua (${allRooms.length})'),
+                        selected: _availabilityFilter == 'all',
+                        onSelected: (_) => setState(() => _availabilityFilter = 'all'),
+                        selectedColor: accent,
+                        labelStyle: TextStyle(
+                          color: _availabilityFilter == 'all' ? Colors.white : ink,
+                          fontWeight: _availabilityFilter == 'all' ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.circle, color: Color(0xFF16A34A), size: 12),
+                        label: Text('Tersedia ($availableCount)'),
+                        selected: _availabilityFilter == 'available',
+                        onSelected: (_) => setState(() => _availabilityFilter = 'available'),
+                        selectedColor: const Color(0xFF16A34A),
+                        labelStyle: TextStyle(
+                          color: _availabilityFilter == 'available' ? Colors.white : ink,
+                          fontWeight: _availabilityFilter == 'available' ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.circle, color: Color(0xFFDC2626), size: 12),
+                        label: Text('Sedang Dipakai ($inUseCount)'),
+                        selected: _availabilityFilter == 'in_use',
+                        onSelected: (_) => setState(() => _availabilityFilter = 'in_use'),
+                        selectedColor: const Color(0xFFDC2626),
+                        labelStyle: TextStyle(
+                          color: _availabilityFilter == 'in_use' ? Colors.white : ink,
+                          fontWeight: _availabilityFilter == 'in_use' ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 if (filteredRooms.isEmpty)
                   EmptyState(
                     message: _searchQuery.isEmpty
                         ? 'Belum ada data ruangan.'
-                        : 'Tidak ada ruangan yang cocok dengan pencarian.',
+                        : 'Tidak ada ruangan yang cocok dengan filter atau pencarian.',
                   )
                 else
                   for (final item in filteredRooms)
@@ -381,6 +439,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final capacity = room['capacity'];
     final description = room['description']?.toString();
     final pic = room['pic'] != null ? asMap(room['pic'])['name']?.toString() : null;
+    final isInUse = room['is_in_use'] == true;
+    final currentEvent = room['current_event'] != null ? asMap(room['current_event']) : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -481,6 +541,75 @@ class _RoomsScreenState extends State<RoomsScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              if (isInUse)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.circle, color: Color(0xFFDC2626), size: 10),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Sedang Digunakan Saat Ini',
+                              style: TextStyle(
+                                color: Color(0xFFB91C1C),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (currentEvent != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '${currentEvent['start_time']}–${currentEvent['end_time']} • ${currentEvent['title']}${currentEvent['borrower_name'] != null ? ' (${currentEvent['borrower_name']})' : ''}',
+                                style: const TextStyle(
+                                  color: Color(0xFF7F1D1D),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, color: Color(0xFF16A34A), size: 8),
+                      SizedBox(width: 6),
+                      Text(
+                        'Tersedia Sekarang (Siap digunakan)',
+                        style: TextStyle(
+                          color: Color(0xFF15803D),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               if (description != null && description.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(

@@ -25,5 +25,25 @@ class NotificationController extends Controller
 
         return redirect()->back()->with('success', 'Semua notifikasi telah ditandai sudah dibaca.');
     }
+
+    public function open(Request $request, SystemNotification $notification): RedirectResponse
+    {
+        abort_unless($notification->user_id === auth()->id(), 403);
+
+        if (! $notification->read_at) {
+            $notification->update(['read_at' => now('Asia/Jakarta')]);
+        }
+
+        if ($notification->event_id) {
+            return redirect()->route('events.index');
+        }
+
+        $titleLower = strtolower($notification->title . ' ' . $notification->message);
+        if (str_contains($titleLower, 'fasilitas') || str_contains($titleLower, 'kerusakan') || str_contains($titleLower, 'pengaduan')) {
+            return redirect()->route('complaints.index');
+        }
+
+        return redirect()->back();
+    }
 }
 

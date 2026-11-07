@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'RAPI-Sekolah')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}?v={{ file_exists(public_path('images/favicon.png')) ? filemtime(public_path('images/favicon.png')) : time() }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : time() }}">
     @if(request()->routeIs('events.*'))
-        <link rel="stylesheet" href="{{ asset('css/events.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/events.css') }}?v={{ file_exists(public_path('css/events.css')) ? filemtime(public_path('css/events.css')) : time() }}">
     @endif
 </head>
 <body>
@@ -83,14 +83,14 @@
             <div class="topbar-title">@yield('topbar', 'Sistem RAPI-Sekolah')</div>
             <div style="display: flex; align-items: center; gap: 14px;">
                 @php
-                    $unreadNotifications = auth()->check()
-                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->whereNull('read_at')->latest()->take(8)->get()
+                    $allUserNotifications = auth()->check()
+                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->latest()->take(10)->get()
                         : collect();
-                    $unreadCount = $unreadNotifications->count();
+                    $unreadCount = $allUserNotifications->whereNull('read_at')->count();
                 @endphp
                 <div class="notif-wrapper">
-                    <button type="button" class="notif-bell-btn" id="notifBellBtn" aria-label="Notifikasi" title="Notifikasi">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <button type="button" class="notif-bell-btn" id="notifBellBtn" aria-label="Notifikasi" title="Notifikasi ({{ $unreadCount }} baru)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                         </svg>
@@ -100,7 +100,12 @@
                     </button>
                     <div class="notif-dropdown" id="notifDropdown" style="display: none;">
                         <div class="notif-dropdown-header">
-                            <strong>Notifikasi</strong>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <strong>Notifikasi</strong>
+                                @if($unreadCount > 0)
+                                    <span style="display:inline-block; background:#dcfce7; color:#15803d; font-size:11px; font-weight:700; padding:1px 6px; border-radius:10px;">{{ $unreadCount }} baru</span>
+                                @endif
+                            </div>
                             @if($unreadCount > 0)
                                 <form method="post" action="{{ route('notifications.read-all') }}" style="margin:0;">
                                     @csrf
@@ -109,20 +114,27 @@
                             @endif
                         </div>
                         <div class="notif-dropdown-list">
-                            @forelse($unreadNotifications as $notif)
-                                <div class="notif-item unread">
-                                    <div class="notif-item-body">
-                                        <strong>{{ $notif->title }}</strong>
+                            @forelse($allUserNotifications as $notif)
+                                <div class="notif-item {{ $notif->read_at ? 'read' : 'unread' }}">
+                                    <a class="notif-item-link" href="{{ route('notifications.open', $notif) }}" title="Klik untuk membuka agenda/pengaduan terkait">
+                                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                                            @if(! $notif->read_at)
+                                                <span style="width:7px; height:7px; border-radius:50%; background:#16a34a; display:inline-block; flex-shrink:0;"></span>
+                                            @endif
+                                            <strong>{{ $notif->title }}</strong>
+                                        </div>
                                         <p>{{ $notif->message }}</p>
                                         <small>{{ $notif->created_at->diffForHumans() }}</small>
-                                    </div>
-                                    <form method="post" action="{{ route('notifications.read', $notif) }}" style="margin:0;">
-                                        @csrf
-                                        <button type="submit" class="notif-check-btn" title="Tandai dibaca">✓</button>
-                                    </form>
+                                    </a>
+                                    @if(! $notif->read_at)
+                                        <form method="post" action="{{ route('notifications.read', $notif) }}" style="margin:0;">
+                                            @csrf
+                                            <button type="submit" class="notif-check-btn" title="Tandai dibaca">✓</button>
+                                        </form>
+                                    @endif
                                 </div>
                             @empty
-                                <div class="notif-empty">Tidak ada notifikasi baru</div>
+                                <div class="notif-empty">Belum ada notifikasi</div>
                             @endforelse
                         </div>
                     </div>
@@ -142,17 +154,19 @@
     const appShell = document.querySelector('.app-shell');
     const sidebarToggle = document.querySelector('.sidebar-toggle');
 
-    sidebarToggle.addEventListener('click', () => {
-        const collapsed = appShell.classList.toggle('sidebar-collapsed');
-        const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
+    if (sidebarToggle && appShell) {
+        sidebarToggle.addEventListener('click', () => {
+            const collapsed = appShell.classList.toggle('sidebar-collapsed');
+            const label = collapsed ? 'Perbesar menu samping' : 'Kecilkan menu samping';
 
-        sidebarToggle.innerHTML = collapsed
-            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
-            : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
-        sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
-        sidebarToggle.setAttribute('aria-label', label);
-        sidebarToggle.title = label;
-    });
+            sidebarToggle.innerHTML = collapsed
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>';
+            sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+            sidebarToggle.setAttribute('aria-label', label);
+            sidebarToggle.title = label;
+        });
+    }
 
     const notifBtn = document.getElementById('notifBellBtn');
     const notifDropdown = document.getElementById('notifDropdown');
@@ -162,8 +176,11 @@
             const isHidden = notifDropdown.style.display === 'none';
             notifDropdown.style.display = isHidden ? 'block' : 'none';
         });
+        notifDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
         document.addEventListener('click', (e) => {
-            if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
+            if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
                 notifDropdown.style.display = 'none';
             }
         });

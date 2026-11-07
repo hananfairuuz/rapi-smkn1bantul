@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -202,6 +201,23 @@ class ApiService {
   Future<void> deleteEvent(int id) async {
     await _request('DELETE', '/events/$id');
   }
+
+  Future<Map<String, dynamic>> checkoutEvent(
+    int id, {
+    required String condition,
+    String? notes,
+  }) =>
+      _request(
+        'POST',
+        '/events/$id/checkout',
+        body: {
+          'checkout_condition': condition,
+          if (notes != null && notes.isNotEmpty) 'checkout_notes': notes,
+        },
+      );
+
+  Future<Map<String, dynamic>> getEventReceipt(int id) =>
+      _request('GET', '/events/$id/receipt');
 
   Future<Map<String, dynamic>> createComplaint(
     Map<String, String> fields, {

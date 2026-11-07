@@ -133,9 +133,9 @@
                             <span class="badge approved" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-size:11.5px; padding:6px 10px;">
                                 ✓ Dikembalikan ({{ $event->returned_at->format('d/m/Y H:i') }})
                             </span>
-                        @elseif($event->canBeCheckedOut() && (auth()->user()->role?->name === 'admin' || $event->user_id === auth()->id() || (auth()->user()->role?->name === 'pic' && $event->room->pic_id === auth()->id())))
+                        @elseif($event->canBeCheckedOut() && (auth()->user()->role?->name === 'admin' || $event->user_id === auth()->id() || (auth()->user()->role?->name === 'pic' && $event->room?->pic_id === auth()->id())))
                             <details style="display:inline-block; position:relative;">
-                                <summary class="btn" style="background:#0284c7; border-color:#0369a1; color:#fff; cursor:pointer;">
+                                <summary class="btn" style="background:#0284c7; border-color:#0369a1; color:#fff; cursor:pointer; list-style:none;">
                                     Serah Terima / Pengembalian
                                 </summary>
                                 <div style="position:absolute; right:0; z-index:10; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:16px; width:300px; margin-top:8px;">

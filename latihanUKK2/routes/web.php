@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/receipt', [EventController::class, 'receipt'])->name('events.receipt');
     Route::post('/events/{event}/checkout', [EventController::class, 'checkout'])->name('events.checkout');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::resource('rooms', RoomController::class)->except('show');

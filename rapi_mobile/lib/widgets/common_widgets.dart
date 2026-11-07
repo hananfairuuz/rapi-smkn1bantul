@@ -260,53 +260,63 @@ class QuickAction extends StatelessWidget {
 }
 
 class NoticeCard extends StatelessWidget {
-  const NoticeCard({required this.data, this.onDismiss, super.key});
+  const NoticeCard({
+    required this.data,
+    this.onDismiss,
+    this.onTap,
+    super.key,
+  });
 
   final Map<String, dynamic> data;
   final VoidCallback? onDismiss;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: accentSoft,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: line),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2, right: 10),
-          child: Icon(Icons.info_outline, color: accentHover, size: 20),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data['title']?.toString() ?? 'Pemberitahuan',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: ink,
-                  fontSize: 14,
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(10),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: accentSoft,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2, right: 10),
+            child: Icon(Icons.info_outline, color: accentHover, size: 20),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data['title']?.toString() ?? 'Pemberitahuan',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: ink,
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                data['message']?.toString() ?? '',
-                style: const TextStyle(fontSize: 13, color: ink),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  data['message']?.toString() ?? '',
+                  style: const TextStyle(fontSize: 13, color: ink),
+                ),
+              ],
+            ),
           ),
-        ),
-        if (onDismiss != null)
-          IconButton(
-            tooltip: 'Tandai sudah dibaca',
-            icon: const Icon(Icons.check, size: 18, color: accentHover),
-            onPressed: onDismiss,
-          ),
-      ],
+          if (onDismiss != null)
+            IconButton(
+              tooltip: 'Tandai sudah dibaca',
+              icon: const Icon(Icons.check, size: 18, color: accentHover),
+              onPressed: onDismiss,
+            ),
+        ],
+      ),
     ),
   );
 }
@@ -563,11 +573,16 @@ void showEventDetailSheet({
   required BuildContext context,
   required Map<String, dynamic> event,
   VoidCallback? onReportDamage,
+  VoidCallback? onCheckout,
+  VoidCallback? onViewReceipt,
 }) {
   final room = asMap(event['room']);
   final user = asMap(event['user']);
   final status = event['status']?.toString() ?? 'pending';
   final isOvernight = eventEndsNextDay(event);
+  final returnedAt = event['returned_at_formatted']?.toString() ?? event['returned_at']?.toString();
+  final checkoutCondition = event['checkout_condition']?.toString();
+  final canCheckout = event['can_checkout'] == true;
 
   showModalBottomSheet(
     context: context,
@@ -628,6 +643,12 @@ void showEventDetailSheet({
                   Icons.account_circle_outlined,
                   'Akun Pemohon',
                   user['name'].toString(),
+                ),
+              if (returnedAt != null)
+                _detailRow(
+                  Icons.assignment_turned_in,
+                  'Status Pengembalian',
+                  'Dikembalikan pada $returnedAt (${checkoutCondition == 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih'})',
                 ),
               if (event['description'] != null &&
                   event['description'].toString().trim().isNotEmpty) ...[
@@ -695,23 +716,61 @@ void showEventDetailSheet({
                   ),
                 ),
               ],
-              if (onReportDamage != null && status == 'approved') ...[
+              if (status == 'approved') ...[
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: warning,
-                      foregroundColor: Colors.white,
+                if (canCheckout && onCheckout != null && returnedAt == null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onCheckout();
+                      },
+                      icon: const Icon(Icons.assignment_turned_in_outlined),
+                      label: const Text('Serah Terima / Pengembalian Ruangan'),
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      onReportDamage();
-                    },
-                    icon: const Icon(Icons.report_problem_outlined),
-                    label: const Text('Catat Barang Rusak'),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                ],
+                if (onViewReceipt != null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ink,
+                        side: const BorderSide(color: line),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onViewReceipt();
+                      },
+                      icon: const Icon(Icons.description_outlined),
+                      label: const Text('Surat Izin Peminjaman Ruangan'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (onReportDamage != null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: warningText,
+                        side: const BorderSide(color: accent),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onReportDamage();
+                      },
+                      icon: const Icon(Icons.report_problem_outlined),
+                      label: const Text('Catat Barang Rusak'),
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

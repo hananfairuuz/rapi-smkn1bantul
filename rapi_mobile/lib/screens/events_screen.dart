@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../api_service.dart';
 import '../constants.dart';
@@ -173,6 +176,414 @@ class _EventsScreenState extends State<EventsScreen> {
     }
   }
 
+  Future<void> _handleCheckout(Map<String, dynamic> event) async {
+    final eventId = event['id'] as int;
+    final room = asMap(event['room']);
+    String condition = 'aman';
+    final notesController = TextEditingController();
+    bool submitting = false;
+    String? errorMessage;
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.viewInsetsOf(context).bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Serah Terima Ruangan',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: ink,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context, false),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Konfirmasi pengembalian ${room['name'] ?? 'ruangan'} setelah agenda "${event['title'] ?? 'Agenda'}" selesai digunakan.',
+                      style: const TextStyle(color: muted, fontSize: 13),
+                    ),
+                    const SizedBox(height: 14),
+                    if (errorMessage != null) ...[
+                      ErrorBanner(message: errorMessage!),
+                      const SizedBox(height: 12),
+                    ],
+                    const Text(
+                      'Kondisi Fasilitas Ruangan saat Pengembalian:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: ink,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: condition == 'aman' ? success : line,
+                          width: condition == 'aman' ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        color: condition == 'aman' ? const Color(0xFFF0FDF4) : Colors.white,
+                      ),
+                      child: RadioListTile<String>(
+                        value: 'aman',
+                        groupValue: condition,
+                        activeColor: success,
+                        title: const Text(
+                          'Aman, Bersih, & Lengkap',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                        subtitle: const Text(
+                          'Seluruh fasilitas, sarana, dan kebersihan ruangan dalam kondisi baik.',
+                          style: TextStyle(fontSize: 12, color: muted),
+                        ),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => condition = val);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: condition == 'rusak' ? danger : line,
+                          width: condition == 'rusak' ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        color: condition == 'rusak' ? const Color(0xFFFEF2F2) : Colors.white,
+                      ),
+                      child: RadioListTile<String>(
+                        value: 'rusak',
+                        groupValue: condition,
+                        activeColor: danger,
+                        title: const Text(
+                          'Ada Kerusakan Fasilitas',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: dangerText,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Ditemukan kerusakan/kehilangan barang selama atau setelah pemakaian.',
+                          style: TextStyle(fontSize: 12, color: muted),
+                        ),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => condition = val);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: notesController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Catatan Pengembalian (Opsional)',
+                        hintText: 'Contoh: AC dan lampu sudah dimatikan, kunci diserahkan ke piket.',
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: condition == 'rusak'
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              setModalState(() {
+                                submitting = true;
+                                errorMessage = null;
+                              });
+                              try {
+                                await widget.api.checkoutEvent(
+                                  eventId,
+                                  condition: condition,
+                                  notes: notesController.text.trim(),
+                                );
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx, true);
+                                }
+                              } catch (e) {
+                                setModalState(() {
+                                  submitting = false;
+                                  errorMessage = e.toString();
+                                });
+                              }
+                            },
+                      child: submitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              condition == 'rusak'
+                                  ? 'Konfirmasi & Lanjut Lapor Kerusakan'
+                                  : 'Konfirmasi Ruangan Selesai Digunakan',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      await _reload();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ruangan berhasil dikonfirmasi selesai digunakan.'),
+            backgroundColor: success,
+          ),
+        );
+      }
+      if (condition == 'rusak' && widget.onReportDamage != null) {
+        widget.onReportDamage!(event);
+      }
+    }
+  }
+
+  Future<void> _showReceiptDialog(Map<String, dynamic> event) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final Map<String, dynamic> receiptData;
+    try {
+      final res = await widget.api.getEventReceipt(event['id'] as int);
+      receiptData = asMap(res['receipt']);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat surat izin: $e'),
+            backgroundColor: danger,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _ReceiptSheet(
+        receipt: receiptData,
+        onPrintPdf: () => _printReceiptPdf(receiptData),
+      ),
+    );
+  }
+
+  Future<void> _printReceiptPdf(Map<String, dynamic> receipt) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        build: (pw.Context ctx) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text(
+                      'PEMERINTAH DAERAH DAERAH ISTIMEWA YOGYAKARTA',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+                    ),
+                    pw.Text(
+                      'DINAS PENDIDIKAN, PEMUDA, DAN OLAHRAGA',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'SMK NEGERI 1 BANTUL',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                    ),
+                    pw.Text(
+                      'Jalan Parangtritis KM 11, Sabdodadi, Bantul, D.I. Yogyakarta 55715',
+                      style: const pw.TextStyle(fontSize: 9.5),
+                    ),
+                    pw.Text(
+                      'Telepon: (0274) 367156 | Website: https://rapi-smkn1bantul.web.id',
+                      style: const pw.TextStyle(fontSize: 9.5),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 1.5),
+              pw.SizedBox(height: 12),
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text(
+                      'SURAT BUKTI IZIN PEMINJAMAN RUANGAN',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 13,
+                        decoration: pw.TextDecoration.underline,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Nomor Verifikasi: ${receipt['verification_code'] ?? '-'}',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 14),
+              pw.Text(
+                'Berdasarkan pengajuan permohonan melalui Sistem RAPI (Ruang dan Agenda Pinjam), dengan ini diberikan izin pemakaian fasilitas ruangan sekolah kepada:',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 12),
+              pw.TableHelper.fromTextArray(
+                headers: ['Informasi', 'Rincian Penggunaan Ruangan'],
+                data: [
+                  ['Nama Agenda / Kegiatan', receipt['title']?.toString() ?? '-'],
+                  ['Ruangan Dipinjam', receipt['room_name']?.toString() ?? '-'],
+                  ['Lokasi Ruangan', receipt['room_location']?.toString() ?? '-'],
+                  ['Penanggung Jawab / Peminjam', receipt['borrower_name']?.toString() ?? '-'],
+                  ['Kontak WhatsApp', receipt['borrower_whatsapp']?.toString() ?? '-'],
+                  ['Hari & Tanggal Pelaksanaan', receipt['date_formatted']?.toString() ?? receipt['date']?.toString() ?? '-'],
+                  ['Waktu Penggunaan', '${receipt['start_time']} - ${receipt['end_time']} WIB'],
+                  ['Diajukan Oleh (Akun)', receipt['applicant_name']?.toString() ?? '-'],
+                  ['Waktu Disetujui', receipt['approved_at']?.toString() ?? '-'],
+                  ['Status Verifikasi', 'RESMI DISETUJUI & TERCATAT SISTEM'],
+                  [
+                    'Status Pengembalian',
+                    receipt['returned_at'] != null
+                        ? 'Selesai & Dikembalikan pada ${receipt['returned_at']} (Kondisi: ${receipt['checkout_condition'] == 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih'})'
+                        : 'Belum Selesai / Belum Dikembalikan',
+                  ],
+                ],
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              ),
+              if (receipt['description'] != null &&
+                  receipt['description'].toString().trim().isNotEmpty) ...[
+                pw.SizedBox(height: 10),
+                pw.Text('Keterangan Kegiatan:',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5)),
+                pw.SizedBox(height: 2),
+                pw.Text(receipt['description'].toString(),
+                    style: const pw.TextStyle(fontSize: 9)),
+              ],
+              pw.SizedBox(height: 12),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(8),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Ketentuan Pemakaian Fasilitas:',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                    pw.SizedBox(height: 3),
+                    pw.Text('1. Wajib menjaga ketertiban, kebersihan, dan keutuhan fasilitas selama pemakaian.',
+                        style: const pw.TextStyle(fontSize: 8)),
+                    pw.Text('2. Dilarang memindahkan atau mengubah tata letak barang/peralatan tanpa izin petugas sarpras.',
+                        style: const pw.TextStyle(fontSize: 8)),
+                    pw.Text('3. Setelah kegiatan selesai, wajib mematikan lampu & AC, membersihkan ruangan, serta melakukan konfirmasi pengembalian (check-out) melalui aplikasi RAPI.',
+                        style: const pw.TextStyle(fontSize: 8)),
+                  ],
+                ),
+              ),
+              pw.Spacer(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text('Peminjam / Penanggung Jawab,', style: const pw.TextStyle(fontSize: 9.5)),
+                      pw.SizedBox(height: 42),
+                      pw.Text(receipt['borrower_name']?.toString() ?? '-',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text('Bantul, ${receipt['date_formatted'] ?? ''}', style: const pw.TextStyle(fontSize: 9.5)),
+                      pw.Text('Pengelola Sarpras / PIC Ruangan,', style: const pw.TextStyle(fontSize: 9.5)),
+                      pw.SizedBox(height: 42),
+                      pw.Text(receipt['pic_name']?.toString() ?? 'Pengelola Sarpras SMKN 1 Bantul',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      name: 'surat-izin-${receipt['verification_code'] ?? 'rapi'}.pdf',
+      onLayout: (_) => pdf.save(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -303,10 +714,22 @@ class _EventsScreenState extends State<EventsScreen> {
                         data: asMap(event),
                         canDelete: _canDeleteEvent(asMap(event)),
                         onDelete: () => _deleteEvent(asMap(event)),
+                        onCheckout: asMap(event)['can_checkout'] == true
+                            ? () => _handleCheckout(asMap(event))
+                            : null,
+                        onViewReceipt: asMap(event)['status'] == 'approved'
+                            ? () => _showReceiptDialog(asMap(event))
+                            : null,
                         onTap: () {
                           showEventDetailSheet(
                             context: context,
                             event: asMap(event),
+                            onCheckout: asMap(event)['can_checkout'] == true
+                                ? () => _handleCheckout(asMap(event))
+                                : null,
+                            onViewReceipt: asMap(event)['status'] == 'approved'
+                                ? () => _showReceiptDialog(asMap(event))
+                                : null,
                             onReportDamage:
                                 asMap(event)['status'] == 'approved' &&
                                     widget.onReportDamage != null
@@ -367,6 +790,8 @@ class EventCard extends StatelessWidget {
     required this.data,
     this.onTap,
     this.onReportDamage,
+    this.onCheckout,
+    this.onViewReceipt,
     this.canDelete = false,
     this.onDelete,
     super.key,
@@ -375,6 +800,8 @@ class EventCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback? onTap;
   final VoidCallback? onReportDamage;
+  final VoidCallback? onCheckout;
+  final VoidCallback? onViewReceipt;
   final bool canDelete;
   final VoidCallback? onDelete;
 
@@ -383,6 +810,9 @@ class EventCard extends StatelessWidget {
     final room = asMap(data['room']);
     final isOvernight = eventEndsNextDay(data);
     final status = data['status']?.toString() ?? 'pending';
+    final canCheckout = data['can_checkout'] == true;
+    final returnedAt = data['returned_at_formatted']?.toString() ?? data['returned_at']?.toString();
+    final checkoutCondition = data['checkout_condition']?.toString();
 
     return Card(
       child: InkWell(
@@ -540,19 +970,85 @@ class EventCard extends StatelessWidget {
                   ),
                 ),
               ],
-              if (status == 'approved' && onReportDamage != null) ...[
+              if (status == 'approved') ...[
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: warningText,
-                      side: const BorderSide(color: accent),
+                if (returnedAt != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    onPressed: onReportDamage,
-                    icon: const Icon(Icons.report_problem_outlined, size: 18),
-                    label: const Text('Catat Barang Rusak'),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '✓ Dikembalikan ($returnedAt)${checkoutCondition == 'rusak' ? ' • Kondisi: Ada Kerusakan Dilaporkan' : ' • Aman & Bersih'}',
+                            style: const TextStyle(
+                              color: Color(0xFF15803D),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 8),
+                ] else if (canCheckout && onCheckout != null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      ),
+                      onPressed: onCheckout,
+                      icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
+                      label: const Text(
+                        'Serah Terima / Pengembalian',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Row(
+                  children: [
+                    if (onViewReceipt != null)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF0F172A),
+                            side: const BorderSide(color: line),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: onViewReceipt,
+                          icon: const Icon(Icons.description_outlined, size: 16),
+                          label: const Text('Surat Izin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    if (onViewReceipt != null && onReportDamage != null)
+                      const SizedBox(width: 8),
+                    if (onReportDamage != null)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: warningText,
+                            side: const BorderSide(color: accent),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: onReportDamage,
+                          icon: const Icon(Icons.report_problem_outlined, size: 16),
+                          label: const Text('Barang Rusak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                  ],
                 ),
               ],
               if (canDelete && onDelete != null) ...[
@@ -1413,5 +1909,197 @@ class _EventFormState extends State<EventForm> {
         child: Text('Jam bebas', style: TextStyle(fontSize: 13)),
       ),
     ];
+  }
+}
+
+class _ReceiptSheet extends StatelessWidget {
+  const _ReceiptSheet({
+    required this.receipt,
+    required this.onPrintPdf,
+  });
+
+  final Map<String, dynamic> receipt;
+  final VoidCallback onPrintPdf;
+
+  @override
+  Widget build(BuildContext context) {
+    final returnedAt = receipt['returned_at']?.toString();
+    final checkoutCondition = receipt['checkout_condition']?.toString();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.verified, color: success, size: 22),
+                    SizedBox(width: 8),
+                    Text(
+                      'Surat Izin Ruangan',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: ink,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Text(
+              'Bukti izin resmi peminjaman ruangan yang telah disetujui.',
+              style: TextStyle(color: muted, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                border: Border.all(color: line),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Column(
+                      children: [
+                        const Text(
+                          'PEMERINTAH DAERAH D.I. YOGYAKARTA',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: muted),
+                        ),
+                        const Text(
+                          'SMK NEGERI 1 BANTUL',
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: ink),
+                        ),
+                        const Text(
+                          'Jl. Parangtritis KM 11, Sabdodadi, Bantul',
+                          style: TextStyle(fontSize: 11, color: muted),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFBAE6FD)),
+                          ),
+                          child: Text(
+                            'KODE VERIFIKASI: ${receipt['verification_code'] ?? '-'}',
+                            style: const TextStyle(
+                              color: Color(0xFF0369A1),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  _infoItem('Nama Agenda', receipt['title']?.toString() ?? '-'),
+                  _infoItem('Ruangan Dipinjam', '${receipt['room_name'] ?? '-'}${receipt['room_location'] != null ? ' (${receipt['room_location']})' : ''}'),
+                  _infoItem('Hari & Tanggal', receipt['date_formatted']?.toString() ?? receipt['date']?.toString() ?? '-'),
+                  _infoItem('Waktu Penggunaan', '${receipt['start_time']} - ${receipt['end_time']} WIB'),
+                  _infoItem('Peminjam / PJ', '${receipt['borrower_name'] ?? '-'}${receipt['borrower_whatsapp'] != null ? ' (${receipt['borrower_whatsapp']})' : ''}'),
+                  _infoItem('Akun Pemohon', receipt['applicant_name']?.toString() ?? '-'),
+                  _infoItem('Pengelola / PIC', receipt['pic_name']?.toString() ?? 'Pengelola Sarpras'),
+                  _infoItem('Waktu Disetujui', receipt['approved_at']?.toString() ?? '-'),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: returnedAt != null ? const Color(0xFFF0FDF4) : const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: returnedAt != null ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          returnedAt != null ? Icons.check_circle : Icons.schedule,
+                          size: 16,
+                          color: returnedAt != null ? success : warningText,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            returnedAt != null
+                                ? 'Ruangan dikembalikan pada $returnedAt (${checkoutCondition == 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih'})'
+                                : 'Agenda aktif / belum dikonfirmasi pengembaliannya.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: returnedAt != null ? successText : warningText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                onPrintPdf();
+              },
+              icon: const Icon(Icons.print_outlined),
+              label: const Text(
+                'Cetak / Simpan PDF Surat Izin',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const Text(': ', style: TextStyle(color: muted, fontSize: 12)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
