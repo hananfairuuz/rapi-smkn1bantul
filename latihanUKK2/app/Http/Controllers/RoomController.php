@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\Event;
 use App\Models\Room;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -17,15 +20,48 @@ class RoomController extends Controller
     {
         abort_unless(in_array(auth()->user()->role?->name, ['admin', 'pic', 'guru', 'organisasi']), 403);
         $search = trim((string) request('search', ''));
+        $statusFilter = request('status', 'all');
+
         $query = Room::with('pic');
         if (auth()->user()->role?->name === 'pic') {
             $query->where('pic_id', auth()->id());
         }
         $query->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"));
 
+        $rooms = $query->orderBy('name')->get();
+
+        $now = CarbonImmutable::now('Asia/Jakarta');
+        $today = $now->toDateString();
+
+        $activeEvents = Event::with('user')
+            ->where('status', 'approved')
+            ->whereDate('date', '<=', $today)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+            })
+            ->get()
+            ->filter(fn (Event $ev) => $now->betweenIncluded($ev->startAt(), $ev->endAt()));
+
+        $activeByRoom = $activeEvents->keyBy('room_id');
+
+        $rooms = $rooms->map(function ($room) use ($activeByRoom) {
+            $currentEvent = $activeByRoom->get($room->id);
+            $room->is_in_use = $currentEvent !== null;
+            $room->current_event = $currentEvent;
+
+            return $room;
+        });
+
+        if ($statusFilter === 'available') {
+            $rooms = $rooms->where('is_in_use', false)->values();
+        } elseif ($statusFilter === 'in_use') {
+            $rooms = $rooms->where('is_in_use', true)->values();
+        }
+
         return view('rooms.index', [
-            'rooms' => $query->latest()->get(),
+            'rooms' => $rooms,
             'search' => $search,
+            'statusFilter' => $statusFilter,
             'canManage' => auth()->user()->role?->name === 'admin',
         ]);
     }
@@ -40,7 +76,8 @@ class RoomController extends Controller
     public function store(Request $request)
     {
         $this->canManageRooms();
-        Room::create($this->validated($request));
+        $room = Room::create($this->validated($request));
+        ActivityLog::record('Tambah Ruangan', auth()->user()->name . " menambahkan ruangan baru '{$room->name}'.");
 
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil ditambahkan.');
     }
@@ -56,6 +93,7 @@ class RoomController extends Controller
     {
         $this->canManageRooms();
         $room->update($this->validated($request));
+        ActivityLog::record('Edit Ruangan', auth()->user()->name . " memperbarui informasi ruangan '{$room->name}'.");
 
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil diperbarui.');
     }
@@ -63,7 +101,9 @@ class RoomController extends Controller
     public function destroy(Room $room)
     {
         $this->canManageRooms();
+        $name = $room->name;
         $room->delete();
+        ActivityLog::record('Hapus Ruangan', auth()->user()->name . " menghapus ruangan '{$name}'.");
 
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil dihapus.');
     }

@@ -63,6 +63,8 @@ Route::middleware(AuthenticateApiToken::class)->group(function () {
     Route::get('/events', [MobileApiController::class, 'events']);
     Route::post('/events', [MobileApiController::class, 'createEvent']);
     Route::delete('/events/{event}', [MobileApiController::class, 'deleteEvent']);
+    Route::post('/events/{event}/checkout', [MobileApiController::class, 'checkoutEvent']);
+    Route::get('/events/{event}/receipt', [MobileApiController::class, 'eventReceipt']);
     Route::get('/reports/damaged-goods', [MobileApiController::class, 'damagedGoodsReport']);
     Route::get('/reports/damaged-goods/docx', [ReportController::class, 'damagedGoodsDocxForApi']);
     Route::get('/complaints', [MobileApiController::class, 'complaints']);

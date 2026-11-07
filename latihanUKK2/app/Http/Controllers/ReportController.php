@@ -29,6 +29,23 @@ class ReportController extends Controller
         return $this->downloadDocx($report, $filename, fn (string $path, array $data) => $this->writeDocx($path, $data));
     }
 
+    public function excel(Request $request): Response
+    {
+        $this->ensureAdmin();
+        $report = $this->monthlyReport($request);
+        $datePart = $report['period_type'] === 'month'
+            ? sprintf('%04d-%02d', $report['year'], $report['month'])
+            : $report['startDate']->format('Y-m-d');
+        $filename = "laporan-rapi-{$datePart}.xls";
+
+        return response()->streamDownload(function () use ($report): void {
+            echo view('reports.excel-monthly', $report)->render();
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
     public function damagedGoods(Request $request): Response
     {
         $this->ensurePic();
@@ -44,6 +61,23 @@ class ReportController extends Controller
         $filename = $this->reportFilename('laporan-barang-rusak', $report);
 
         return $this->downloadDocx($report, $filename, fn (string $path, array $data) => $this->writeDamagedGoodsDocx($path, $data));
+    }
+
+    public function damagedGoodsExcel(Request $request): Response
+    {
+        $this->ensurePic();
+        $report = $this->monthlyDamagedGoodsReport($request);
+        $datePart = $report['period_type'] === 'month'
+            ? sprintf('%04d-%02d', $report['year'], $report['month'])
+            : $report['startDate']->format('Y-m-d');
+        $filename = "laporan-barang-rusak-{$datePart}.xls";
+
+        return response()->streamDownload(function () use ($report): void {
+            echo view('reports.excel-damaged-goods', $report)->render();
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     public function damagedGoodsDocxForApi(Request $request): Response

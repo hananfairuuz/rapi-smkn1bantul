@@ -10,11 +10,45 @@ class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'room_id', 'booking_group_id', 'title', 'borrower_name', 'borrower_whatsapp', 'description', 'date', 'end_date', 'start_time', 'end_time', 'status', 'move_reason', 'rejection_reason'];
+    protected $fillable = [
+        'user_id',
+        'room_id',
+        'booking_group_id',
+        'title',
+        'borrower_name',
+        'borrower_whatsapp',
+        'description',
+        'date',
+        'end_date',
+        'start_time',
+        'end_time',
+        'status',
+        'move_reason',
+        'rejection_reason',
+        'returned_at',
+        'checkout_condition',
+        'checkout_notes',
+        'deleted_by_creator_at',
+    ];
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'end_date' => 'date'];
+        return [
+            'date' => 'date',
+            'end_date' => 'date',
+            'returned_at' => 'datetime',
+            'deleted_by_creator_at' => 'datetime',
+        ];
+    }
+
+    public function isReturned(): bool
+    {
+        return $this->returned_at !== null;
+    }
+
+    public function isDeletedByCreator(): bool
+    {
+        return $this->deleted_by_creator_at !== null;
     }
 
     public function endsNextDay(): bool
@@ -57,6 +91,16 @@ class Event extends Model
         return $this->endAt()->lte(now('Asia/Jakarta'))
             ? 'Terlaksana'
             : 'Belum terlaksana';
+    }
+
+    public function hasStarted(): bool
+    {
+        return now('Asia/Jakarta')->gte($this->startAt());
+    }
+
+    public function canBeCheckedOut(): bool
+    {
+        return $this->status === 'approved' && $this->hasStarted() && ! $this->isReturned();
     }
 
     public function canBeDeletedBy(User $user): bool

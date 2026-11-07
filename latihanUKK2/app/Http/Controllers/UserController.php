@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\UserDocumentParserService;
@@ -67,7 +68,8 @@ class UserController extends Controller
         ]);
         $data['email'] = strtolower($data['email']);
         $data['whatsapp'] = $this->validatedWhatsApp($request);
-        User::create($data);
+        $user = User::create($data);
+        ActivityLog::record('Tambah Pengguna', auth()->user()->name . " menambahkan akun baru '{$user->name}' ({$user->email}).");
 
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil ditambahkan.');
     }
@@ -221,6 +223,8 @@ class UserController extends Controller
             $message .= " (" . count($skippedEmails) . " email dilewati karena sudah terdaftar: " . implode(', ', array_slice($skippedEmails, 0, 3)) . (count($skippedEmails) > 3 ? '...' : '') . ")";
         }
 
+        ActivityLog::record('Import Pengguna', auth()->user()->name . " mengimpor {$createdCount} akun pengguna dari dokumen.");
+
         return redirect()->route('users.index')->with('success', $message);
     }
 
@@ -253,6 +257,7 @@ class UserController extends Controller
             $data['google_id'] = null;
         }
         $user->update($data);
+        ActivityLog::record('Edit Pengguna', auth()->user()->name . " memperbarui akun pengguna '{$user->name}' ({$user->email}).");
 
         return redirect()->route('users.index')->with('success', 'Data pengguna dan peran berhasil diperbarui.');
     }
@@ -276,7 +281,9 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Pengguna masih memiliki agenda, pengaduan, tugas PIC, atau notifikasi. Pindahkan atau selesaikan data tersebut sebelum menghapus akun.']);
         }
 
+        $name = $user->name;
         $user->delete();
+        ActivityLog::record('Hapus Pengguna', auth()->user()->name . " menghapus akun pengguna '{$name}'.");
 
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil dihapus.');
     }

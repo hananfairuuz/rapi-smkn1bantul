@@ -15,14 +15,27 @@
         @endif
     </div>
 
-    <form method="get" action="{{ route('rooms.index') }}" class="card actions">
+    <form method="get" action="{{ route('rooms.index') }}" class="card actions" style="margin-bottom: 14px;">
         <label for="room-search">Cari nama ruangan</label>
         <input id="room-search" type="search" name="search" value="{{ $search }}" placeholder="Contoh: Laboratorium">
+        <input type="hidden" name="status" value="{{ $statusFilter ?? 'all' }}">
         <button type="submit">Cari</button>
         @if($search !== '')
-            <a class="btn" href="{{ route('rooms.index') }}">Hapus pencarian</a>
+            <a class="btn secondary" href="{{ route('rooms.index', ['status' => $statusFilter ?? 'all']) }}">Hapus pencarian</a>
         @endif
     </form>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+        <a class="btn {{ ($statusFilter ?? 'all') === 'all' ? '' : 'secondary' }}" href="{{ route('rooms.index', ['search' => $search, 'status' => 'all']) }}">
+            Semua Status
+        </a>
+        <a class="btn {{ ($statusFilter ?? '') === 'available' ? '' : 'secondary' }}" href="{{ route('rooms.index', ['search' => $search, 'status' => 'available']) }}">
+            🟢 Tersedia Sekarang
+        </a>
+        <a class="btn {{ ($statusFilter ?? '') === 'in_use' ? '' : 'secondary' }}" href="{{ route('rooms.index', ['search' => $search, 'status' => 'in_use']) }}">
+            🔴 Sedang Digunakan
+        </a>
+    </div>
 
     <div class="grid">
         @forelse($rooms as $room)
@@ -32,6 +45,17 @@
                     <span style="display: inline-block; background: #e0f2fe; color: #0369a1; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
                         {{ $room->capacity ? $room->capacity . ' orang' : 'Kapasitas -' }}
                     </span>
+                </div>
+                <div style="margin: 8px 0 4px;">
+                    @if(!empty($room->is_in_use))
+                        <span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; font-size: 11px; padding: 3px 8px;">
+                            🔴 Sedang Digunakan ({{ substr($room->current_event->start_time, 0, 5) }}–{{ substr($room->current_event->end_time, 0, 5) }} • {{ $room->current_event->borrower_name ?: $room->current_event->title }})
+                        </span>
+                    @else
+                        <span class="badge" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 11px; padding: 3px 8px;">
+                            🟢 Tersedia Sekarang
+                        </span>
+                    @endif
                 </div>
                 <p style="margin: 6px 0 0; color: #475569; font-size: 13.5px;">
                     <svg style="width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>

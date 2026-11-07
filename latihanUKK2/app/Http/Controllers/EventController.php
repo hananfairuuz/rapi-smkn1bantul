@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\Room;
 use App\Models\SystemNotification;
@@ -25,7 +26,8 @@ class EventController extends Controller
         $search = trim($data['search'] ?? '');
         $query = Event::with(['user', 'room'])->orderByDesc('created_at')->orderByDesc('id');
         if (in_array(auth()->user()->role?->name, ['guru', 'organisasi'])) {
-            $query->where('user_id', auth()->id());
+            $query->where('user_id', auth()->id())
+                ->whereNull('deleted_by_creator_at');
         }
         $allEvents = $query->get();
         $now = CarbonImmutable::now('Asia/Jakarta');
@@ -136,6 +138,15 @@ class EventController extends Controller
                 ? 'Agenda berhasil dibuat dan langsung disetujui.'
                 : 'Agenda diajukan dan menunggu persetujuan.');
 
+        $firstEvent = $createdEvents[0] ?? null;
+        if ($firstEvent) {
+            $firstEvent->load('room');
+            ActivityLog::record(
+                'Pengajuan Peminjaman',
+                auth()->user()->name . " mengajukan peminjaman ruangan {$firstEvent->room->name} untuk agenda '{$firstEvent->title}'."
+            );
+        }
+
         return redirect()->route('events.index')->with('success', $msg);
     }
 
@@ -190,10 +201,77 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
             'rejection_reason' => $data['status'] === 'rejected' ? $data['rejection_reason'] : null,
         ]);
 
+        $event->load('room');
+        SystemNotification::create([
+            'user_id' => $event->user_id,
+            'event_id' => $event->id,
+            'title' => $data['status'] === 'approved' ? 'Agenda Disetujui' : 'Agenda Ditolak',
+            'message' => $data['status'] === 'approved'
+                ? "Pengajuan peminjaman ruangan '{$event->room->name}' untuk agenda '{$event->title}' telah disetujui."
+                : "Pengajuan peminjaman ruangan '{$event->room->name}' ditolak. Alasan: {$event->rejection_reason}",
+        ]);
+
+        ActivityLog::record(
+            $data['status'] === 'approved' ? 'Persetujuan Agenda' : 'Penolakan Agenda',
+            auth()->user()->name . ($data['status'] === 'approved' ? ' menyetujui ' : ' menolak ') . "agenda '{$event->title}' di {$event->room->name}."
+        );
+
         return redirect()->route('events.index')->with(
             'success',
             $data['status'] === 'approved' ? 'Agenda berhasil disetujui.' : 'Agenda berhasil ditolak.'
         );
+    }
+
+    public function receipt(Event $event)
+    {
+        abort_unless(
+            in_array(auth()->user()->role?->name, ['admin', 'pic'], true) || auth()->id() === $event->user_id,
+            403
+        );
+        abort_unless($event->status === 'approved', 404, 'Bukti peminjaman hanya tersedia untuk agenda yang telah disetujui.');
+
+        return view('events.receipt', [
+            'event' => $event->load(['room.pic', 'user']),
+        ]);
+    }
+
+    public function checkout(Request $request, Event $event): RedirectResponse
+    {
+        abort_unless(
+            auth()->user()->role?->name === 'admin'
+            || auth()->user()->id === $event->user_id
+            || (auth()->user()->role?->name === 'pic' && $event->room->pic_id === auth()->id()),
+            403
+        );
+        abort_unless($event->status === 'approved', 422, 'Hanya agenda yang disetujui yang dapat dikonfirmasi pengembaliannya.');
+        abort_unless(
+            $event->hasStarted(),
+            422,
+            'Pengembalian ruangan hanya dapat dilakukan setelah jadwal agenda dimulai atau selesai.'
+        );
+
+        $data = $request->validate([
+            'checkout_condition' => 'required|in:aman,rusak',
+            'checkout_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $event->update([
+            'returned_at' => now('Asia/Jakarta'),
+            'checkout_condition' => $data['checkout_condition'],
+            'checkout_notes' => $data['checkout_notes'],
+        ]);
+
+        $event->load('room');
+        ActivityLog::record(
+            'Pengembalian Ruangan',
+            auth()->user()->name . " mengonfirmasi pengembalian ruangan {$event->room->name} untuk agenda '{$event->title}' (Kondisi: " . ($data['checkout_condition'] === 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih') . ")."
+        );
+
+        if ($data['checkout_condition'] === 'rusak') {
+            return redirect()->route('complaints.create', ['event_id' => $event->id])->with('success', 'Pengembalian dicatat. Silakan laporkan fasilitas/barang yang rusak pada formulir berikut.');
+        }
+
+        return redirect()->back()->with('success', 'Ruangan berhasil dikonfirmasi telah selesai digunakan & dikembalikan.');
     }
 
     public function destroy(Event $event)
@@ -203,7 +281,28 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
             403,
             'Agenda hanya dapat dihapus setelah ditolak atau tiga hari setelah pelaksanaan.'
         );
-        $event->delete();
+
+        $isAdmin = auth()->user()->role?->name === 'admin';
+        $event->load('room');
+        $title = $event->title;
+        $roomName = $event->room?->name ?? 'Ruangan';
+
+        if (! $isAdmin && $event->status === 'approved') {
+            // Pembuat agenda (guru/organisasi) menghapus riwayat agendanya yang sudah terlaksana:
+            // Sembunyikan dari daftar pembuat, namun tetap disimpan untuk kalender dan rekam jejak Admin
+            $event->update(['deleted_by_creator_at' => now('Asia/Jakarta')]);
+            ActivityLog::record(
+                'Hapus Riwayat Agenda',
+                auth()->user()->name . " menghapus agenda terlaksana '{$title}' di {$roomName} dari riwayat pribadinya."
+            );
+        } else {
+            // Admin menghapus, atau agenda berstatus ditolak
+            $event->delete();
+            ActivityLog::record(
+                'Hapus Agenda',
+                auth()->user()->name . " menghapus data agenda '{$title}' di {$roomName}."
+            );
+        }
 
         return redirect()->route('events.index')->with('success', 'Agenda berhasil dihapus.');
     }

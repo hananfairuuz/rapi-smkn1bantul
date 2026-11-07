@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UserController;
@@ -49,12 +51,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/docx', [ReportController::class, 'docx'])->name('reports.docx');
+    Route::get('/reports/excel', [ReportController::class, 'excel'])->name('reports.excel');
     Route::get('/reports/damaged-goods', [ReportController::class, 'damagedGoods'])->name('reports.damaged-goods');
     Route::get('/reports/damaged-goods/docx', [ReportController::class, 'damagedGoodsDocx'])->name('reports.damaged-goods.docx');
+    Route::get('/reports/damaged-goods/excel', [ReportController::class, 'damagedGoodsExcel'])->name('reports.damaged-goods.excel');
     Route::get('/events/availability', [EventController::class, 'availability'])->name('events.availability');
     Route::get('/events/{event}/whatsapp', [EventController::class, 'whatsappForm'])->name('events.whatsapp.form');
     Route::post('/events/{event}/whatsapp', [EventController::class, 'sendWhatsApp'])->name('events.whatsapp.send');
     Route::patch('/events/{event}/status', [EventController::class, 'updateStatus'])->name('events.status.update');
+    Route::get('/events/{event}/receipt', [EventController::class, 'receipt'])->name('events.receipt');
+    Route::post('/events/{event}/checkout', [EventController::class, 'checkout'])->name('events.checkout');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::resource('rooms', RoomController::class)->except('show');
     Route::resource('events', EventController::class)->except('show');
     Route::resource('complaints', ComplaintController::class)->except('show');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\PasswordResetCodeMail;
+use App\Models\ActivityLog;
 use App\Models\ApiToken;
 use App\Models\Complaint;
 use App\Models\Event;
@@ -312,8 +313,39 @@ class MobileApiController extends Controller
             $query->where('pic_id', $request->user()->id);
         }
 
+        $rooms = $query->get(['id', 'name', 'location', 'capacity', 'description', 'pic_id']);
+
+        $now = CarbonImmutable::now('Asia/Jakarta');
+        $today = $now->toDateString();
+        $activeEvents = Event::with('user:id,name')
+            ->where('status', 'approved')
+            ->whereDate('date', '<=', $today)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+            })
+            ->get()
+            ->filter(fn (Event $ev) => $now->betweenIncluded($ev->startAt(), $ev->endAt()));
+
+        $activeByRoom = $activeEvents->keyBy('room_id');
+
+        $rooms->each(function (Room $room) use ($activeByRoom) {
+            $current = $activeByRoom->get($room->id);
+            $room->setAttribute('is_in_use', $current !== null);
+            if ($current) {
+                $room->setAttribute('current_event', [
+                    'id' => $current->id,
+                    'title' => $current->title,
+                    'start_time' => substr($current->start_time, 0, 5),
+                    'end_time' => substr($current->end_time, 0, 5),
+                    'borrower_name' => $current->borrower_name ?: $current->user?->name,
+                ]);
+            } else {
+                $room->setAttribute('current_event', null);
+            }
+        });
+
         return response()->json([
-            'rooms' => $query->get(['id', 'name', 'location', 'capacity', 'description', 'pic_id']),
+            'rooms' => $rooms,
         ]);
     }
 
@@ -443,11 +475,15 @@ class MobileApiController extends Controller
 
         $query = Event::with(['room:id,name,location', 'user:id,name'])->orderByDesc('date')->orderByDesc('start_time');
         if (in_array($role, ['guru', 'organisasi'])) {
-            $query->where('user_id', $request->user()->id);
+            $query->where('user_id', $request->user()->id)
+                ->whereNull('deleted_by_creator_at');
         }
         $events = $query->get();
         $events->each(function (Event $event) use ($request) {
             $event->setAttribute('can_delete', $event->canBeDeletedBy($request->user()));
+            $event->setAttribute('can_checkout', $event->canBeCheckedOut());
+            $event->setAttribute('has_started', $event->hasStarted());
+            $event->setAttribute('returned_at_formatted', $event->returned_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i'));
             if ($event->status === 'approved') {
                 $event->setAttribute('execution_status', $event->executionStatus());
             }
@@ -588,9 +624,105 @@ class MobileApiController extends Controller
             'Agenda hanya dapat dihapus setelah ditolak atau tiga hari setelah pelaksanaan.'
         );
 
-        $event->delete();
+        $event->load('room');
+        $title = $event->title;
+        $roomName = $event->room?->name ?? 'Ruangan';
+
+        if ($event->status === 'approved') {
+            $event->update(['deleted_by_creator_at' => now('Asia/Jakarta')]);
+            ActivityLog::record(
+                'Hapus Riwayat Agenda',
+                $request->user()->name . " menghapus agenda terlaksana '{$title}' di {$roomName} dari riwayat pribadinya."
+            );
+        } else {
+            $event->delete();
+            ActivityLog::record(
+                'Hapus Agenda',
+                $request->user()->name . " menghapus agenda '{$title}' di {$roomName}."
+            );
+        }
 
         return response()->json(['message' => 'Agenda berhasil dihapus.']);
+    }
+
+    public function checkoutEvent(Request $request, Event $event)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user->role?->name === 'admin'
+            || $user->id === $event->user_id
+            || ($user->role?->name === 'pic' && $event->room?->pic_id === $user->id),
+            403,
+            'Anda tidak memiliki akses untuk menyelesaikan agenda ini.'
+        );
+        abort_unless($event->status === 'approved', 422, 'Hanya agenda yang disetujui yang dapat dikonfirmasi pengembaliannya.');
+        abort_unless(
+            $event->hasStarted(),
+            422,
+            'Pengembalian ruangan hanya dapat dilakukan setelah jadwal agenda dimulai atau selesai.'
+        );
+
+        $data = $request->validate([
+            'checkout_condition' => 'required|in:aman,rusak',
+            'checkout_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $event->update([
+            'returned_at' => now('Asia/Jakarta'),
+            'checkout_condition' => $data['checkout_condition'],
+            'checkout_notes' => $data['checkout_notes'] ?? null,
+        ]);
+
+        $event->load('room');
+        ActivityLog::record(
+            'Pengembalian Ruangan',
+            $user->name . " mengonfirmasi pengembalian ruangan {$event->room?->name} untuk agenda '{$event->title}' via mobile (Kondisi: " . ($data['checkout_condition'] === 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih') . ")."
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ruangan berhasil dikonfirmasi telah selesai digunakan & dikembalikan.',
+            'event' => $event->fresh(['room:id,name,location', 'user:id,name']),
+        ]);
+    }
+
+    public function eventReceipt(Request $request, Event $event)
+    {
+        $user = $request->user();
+        abort_unless(
+            in_array($user->role?->name, ['admin', 'pic'], true) || $user->id === $event->user_id,
+            403
+        );
+        abort_unless($event->status === 'approved', 404, 'Bukti peminjaman hanya tersedia untuk agenda yang telah disetujui.');
+
+        $event->load(['room.pic', 'user']);
+
+        return response()->json([
+            'status' => 'success',
+            'event' => $event,
+            'receipt' => [
+                'verification_code' => 'RAPI-' . str_pad((string) $event->id, 5, '0', STR_PAD_LEFT),
+                'title' => $event->title,
+                'room_name' => $event->room?->name,
+                'room_location' => $event->room?->location,
+                'pic_name' => $event->room?->pic?->name ?? 'Pengelola Sarpras',
+                'applicant_name' => $event->user?->name,
+                'applicant_email' => $event->user?->email,
+                'borrower_name' => $event->borrower_name,
+                'borrower_whatsapp' => $event->borrower_whatsapp,
+                'description' => $event->description,
+                'date' => $event->date->format('Y-m-d'),
+                'date_formatted' => $event->date->locale('id')->translatedFormat('l, d F Y'),
+                'end_date' => $event->end_date?->format('Y-m-d'),
+                'end_date_formatted' => $event->end_date?->locale('id')->translatedFormat('l, d F Y'),
+                'start_time' => substr($event->start_time, 0, 5),
+                'end_time' => substr($event->end_time, 0, 5),
+                'approved_at' => $event->updated_at->timezone('Asia/Jakarta')->format('d/m/Y H:i'),
+                'returned_at' => $event->returned_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i'),
+                'checkout_condition' => $event->checkout_condition,
+                'checkout_notes' => $event->checkout_notes,
+            ],
+        ]);
     }
 
     public function complaints(Request $request)

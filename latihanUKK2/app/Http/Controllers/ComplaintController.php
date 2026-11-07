@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Complaint;
 use App\Models\Event;
 use App\Models\Room;
+use App\Models\SystemNotification;
 use App\Services\ComplaintPhotoStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -80,7 +82,9 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
         if ($request->hasFile('photo')) {
             $data['photo_path'] = app(ComplaintPhotoStorage::class)->store($request->file('photo'));
         } unset($data['photo']);
-        Complaint::create($data);
+        $complaint = Complaint::create($data);
+        $complaint->load('room');
+        ActivityLog::record('Laporan Kerusakan', auth()->user()->name . " melaporkan fasilitas rusak '{$complaint->facility_name}' di ruangan {$complaint->room->name}.");
 
         return redirect()->route('complaints.index')->with('success', 'Pengaduan kerusakan berhasil dicatat dan menunggu persetujuan PIC.');
     }
@@ -99,6 +103,14 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
         $this->mayManage($complaint);
         abort_unless($complaint->approval_status === 'approved', 403, 'Pengaduan harus disetujui PIC sebelum status perbaikan diperbarui.');
         $complaint->update($this->validatedForUpdate($request));
+        $complaint->load('room');
+
+        SystemNotification::create([
+            'user_id' => $complaint->reporter_id,
+            'title' => 'Update Perbaikan Fasilitas',
+            'message' => "Status perbaikan fasilitas '{$complaint->facility_name}' di {$complaint->room->name} diperbarui menjadi: {$complaint->status_repair}.",
+        ]);
+        ActivityLog::record('Tindak Lanjut Perbaikan', auth()->user()->name . " memperbarui status perbaikan '{$complaint->facility_name}' di {$complaint->room->name} menjadi '{$complaint->status_repair}'.");
 
         return redirect()->route('complaints.index')->with('success', 'Status pengaduan diperbarui.');
     }
@@ -110,6 +122,14 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
 
         $data = $request->validate(['approval_status' => 'required|in:approved,rejected']);
         $complaint->update(['approval_status' => $data['approval_status']]);
+        $complaint->load('room');
+
+        SystemNotification::create([
+            'user_id' => $complaint->reporter_id,
+            'title' => 'Status Verifikasi Pengaduan',
+            'message' => "Laporan kerusakan '{$complaint->facility_name}' di {$complaint->room->name} telah " . ($data['approval_status'] === 'approved' ? 'disetujui oleh PIC.' : 'ditolak oleh PIC.'),
+        ]);
+        ActivityLog::record('Verifikasi Kerusakan', auth()->user()->name . ($data['approval_status'] === 'approved' ? ' menyetujui ' : ' menolak ') . "laporan kerusakan '{$complaint->facility_name}' di {$complaint->room->name}.");
 
         return redirect()->route('complaints.index')->with(
             'success',

@@ -63,6 +63,7 @@
             <summary class="btn secondary">Unduh Laporan</summary>
             <div class="download-options">
                 <a class="btn" href="{{ route('reports.docx', $period_type === 'month' ? ['period_type' => $period_type, 'selected_month' => sprintf('%04d-%02d', $year, $month)] : ['period_type' => $period_type, 'date' => $startDate->toDateString()]) }}">Unduh DOCX</a>
+                <a class="btn" style="background: #16a34a; border-color: #15803d; color: white;" href="{{ route('reports.excel', $period_type === 'month' ? ['period_type' => $period_type, 'selected_month' => sprintf('%04d-%02d', $year, $month)] : ['period_type' => $period_type, 'date' => $startDate->toDateString()]) }}">Unduh Excel (.XLS)</a>
                 <button class="btn secondary" type="button" onclick="window.print()">Simpan PDF / Cetak</button>
                 <p class="muted">Pilih “Simpan sebagai PDF” pada dialog cetak untuk mengunduh PDF.</p>
             </div>

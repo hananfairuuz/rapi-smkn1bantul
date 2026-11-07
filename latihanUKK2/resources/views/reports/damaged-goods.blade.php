@@ -49,6 +49,7 @@
         <button class="btn" type="submit">Tampilkan Laporan</button>
         <p class="report-filter-help muted">Laporan mingguan dimulai hari Senin. Pilih bulan untuk laporan bulanan atau tanggal untuk laporan mingguan/harian.</p>
         <a class="btn" href="{{ route('reports.damaged-goods.docx', $period_type === 'month' ? ['period_type' => $period_type, 'selected_month' => sprintf('%04d-%02d', $year, $month)] : ['period_type' => $period_type, 'date' => $startDate->toDateString()]) }}">Unduh DOCX</a>
+        <a class="btn" style="background: #16a34a; border-color: #15803d; color: white;" href="{{ route('reports.damaged-goods.excel', $period_type === 'month' ? ['period_type' => $period_type, 'selected_month' => sprintf('%04d-%02d', $year, $month)] : ['period_type' => $period_type, 'date' => $startDate->toDateString()]) }}">Unduh Excel (.XLS)</a>
         <button class="btn secondary" type="button" onclick="window.print()">Simpan PDF / Cetak</button>
     </form>
 

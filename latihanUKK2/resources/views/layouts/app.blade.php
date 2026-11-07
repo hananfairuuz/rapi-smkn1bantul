@@ -56,6 +56,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM16 3.3a4 4 0 0 1 0 7.7M17 14.5h.5a4 4 0 0 1 4 4V20" /></svg>
                     <span>Pengguna &amp; Peran</span>
                 </a>
+                <a class="nav-item {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}" href="{{ route('activity-logs.index') }}" title="Log Aktivitas">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 15" /></svg>
+                    <span>Log Aktivitas</span>
+                </a>
             @elseif(auth()->user()->role?->name === 'pic')
                 <a class="nav-item {{ request()->routeIs('reports.damaged-goods*') ? 'active' : '' }}" href="{{ route('reports.damaged-goods') }}" title="Laporan Barang Rusak">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" /><path d="M14 3.5v4h4M8 12h6M8 16h3M16.5 14.5l2 2M18.5 14.5l-2 2" /></svg>
@@ -77,7 +81,55 @@
     <div class="main-area">
         <header class="topbar">
             <div class="topbar-title">@yield('topbar', 'Sistem RAPI-Sekolah')</div>
-            <div class="profile"><span class="avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ match(auth()->user()->role?->name) {'admin' => 'Waka / Admin', 'pic' => 'PIC Ruang', 'guru' => 'Guru', 'organisasi' => 'Organisasi', default => 'Pengguna'} }}</small></div></div>
+            <div style="display: flex; align-items: center; gap: 14px;">
+                @php
+                    $unreadNotifications = auth()->check()
+                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->whereNull('read_at')->latest()->take(8)->get()
+                        : collect();
+                    $unreadCount = $unreadNotifications->count();
+                @endphp
+                <div class="notif-wrapper">
+                    <button type="button" class="notif-bell-btn" id="notifBellBtn" aria-label="Notifikasi" title="Notifikasi">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                        @if($unreadCount > 0)
+                            <span class="notif-badge">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                        @endif
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown" style="display: none;">
+                        <div class="notif-dropdown-header">
+                            <strong>Notifikasi</strong>
+                            @if($unreadCount > 0)
+                                <form method="post" action="{{ route('notifications.read-all') }}" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" class="notif-mark-all-btn">Tandai semua dibaca</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="notif-dropdown-list">
+                            @forelse($unreadNotifications as $notif)
+                                <div class="notif-item unread">
+                                    <div class="notif-item-body">
+                                        <strong>{{ $notif->title }}</strong>
+                                        <p>{{ $notif->message }}</p>
+                                        <small>{{ $notif->created_at->diffForHumans() }}</small>
+                                    </div>
+                                    <form method="post" action="{{ route('notifications.read', $notif) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" class="notif-check-btn" title="Tandai dibaca">✓</button>
+                                    </form>
+                                </div>
+                            @empty
+                                <div class="notif-empty">Tidak ada notifikasi baru</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile"><span class="avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ match(auth()->user()->role?->name) {'admin' => 'Waka / Admin', 'pic' => 'PIC Ruang', 'guru' => 'Guru', 'organisasi' => 'Organisasi', default => 'Pengguna'} }}</small></div></div>
+            </div>
         </header>
         <main class="page-content">
             @if(session('success'))<div class="alert success">{{ session('success') }}</div>@endif
@@ -101,6 +153,21 @@
         sidebarToggle.setAttribute('aria-label', label);
         sidebarToggle.title = label;
     });
+
+    const notifBtn = document.getElementById('notifBellBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    if (notifBtn && notifDropdown) {
+        notifBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = notifDropdown.style.display === 'none';
+            notifDropdown.style.display = isHidden ? 'block' : 'none';
+        });
+        document.addEventListener('click', (e) => {
+            if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
+                notifDropdown.style.display = 'none';
+            }
+        });
+    }
 </script>
 </body>
 </html>
