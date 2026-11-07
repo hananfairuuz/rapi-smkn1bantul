@@ -14,6 +14,7 @@ class DashboardScreen extends StatefulWidget {
     this.onOpenRooms,
     this.onOpenReport,
     this.onReportDamage,
+    this.onNotificationsChanged,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class DashboardScreen extends StatefulWidget {
   final VoidCallback? onOpenRooms;
   final VoidCallback? onOpenReport;
   final ValueChanged<Map<String, dynamic>>? onReportDamage;
+  final VoidCallback? onNotificationsChanged;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -49,6 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       await widget.api.markNotificationRead(id);
       await _refresh();
+      widget.onNotificationsChanged?.call();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Notifikasi ditandai sudah dibaca.')),

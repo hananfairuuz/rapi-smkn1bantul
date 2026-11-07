@@ -251,6 +251,12 @@ class ApiService {
     body: {'status_repair': status, 'repair_notes': notes},
   );
 
+  Future<Map<String, dynamic>> getNotifications() =>
+      _request('GET', '/notifications');
+
+  Future<void> markAllNotificationsRead() =>
+      _request('POST', '/notifications/read-all');
+
   Future<void> markNotificationRead(int id) =>
       _request('PATCH', '/notifications/$id/read');
 

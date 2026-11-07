@@ -72,5 +72,7 @@ Route::middleware(AuthenticateApiToken::class)->group(function () {
     Route::get('/complaints/{complaint}/photo', [MobileApiController::class, 'complaintPhoto']);
     Route::patch('/complaints/{complaint}/review', [MobileApiController::class, 'reviewComplaint']);
     Route::patch('/complaints/{complaint}/repair', [MobileApiController::class, 'updateComplaintRepair']);
+    Route::get('/notifications', [MobileApiController::class, 'notifications']);
+    Route::post('/notifications/read-all', [MobileApiController::class, 'markAllNotificationsRead']);
     Route::patch('/notifications/{notification}/read', [MobileApiController::class, 'markNotificationRead']);
 });

@@ -776,10 +776,33 @@ class MobileApiController extends Controller
         ]);
     }
 
+    public function notifications(Request $request)
+    {
+        $userId = $request->user()->id;
+        $notifications = SystemNotification::where('user_id', $userId)
+            ->latest()
+            ->take(30)
+            ->get(['id', 'event_id', 'title', 'message', 'read_at', 'created_at']);
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => SystemNotification::where('user_id', $userId)->whereNull('read_at')->count(),
+        ]);
+    }
+
+    public function markAllNotificationsRead(Request $request)
+    {
+        SystemNotification::where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now('Asia/Jakarta')]);
+
+        return response()->json(['message' => 'Semua notifikasi ditandai sudah dibaca.']);
+    }
+
     public function markNotificationRead(Request $request, SystemNotification $notification)
     {
         abort_unless($notification->user_id === $request->user()->id, 403);
-        $notification->update(['read_at' => now()]);
+        $notification->update(['read_at' => now('Asia/Jakarta')]);
 
         return response()->json(['message' => 'Notifikasi ditandai sudah dibaca.']);
     }
