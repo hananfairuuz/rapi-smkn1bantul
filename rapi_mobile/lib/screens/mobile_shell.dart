@@ -40,8 +40,7 @@ class _MobileShellState extends State<MobileShell> {
       ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
   bool get _canAccessRooms =>
       ['admin', 'guru', 'organisasi', 'pic'].contains(widget.user['role']);
-  bool get _canManageRooms =>
-      ['admin', 'guru', 'organisasi'].contains(widget.user['role']);
+  bool get _canManageRooms => widget.user['role'] == 'admin';
 
   List<_NavDestination> get _destinations => [
     const _NavDestination('Beranda', Icons.dashboard_outlined, Icons.dashboard),
