@@ -320,7 +320,7 @@ class MobileApiController extends Controller
     public function createRoom(Request $request)
     {
         $user = $request->user();
-        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+        abort_unless($user->role->name === 'admin', 403);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -346,7 +346,7 @@ class MobileApiController extends Controller
     public function updateRoom(Request $request, Room $room)
     {
         $user = $request->user();
-        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+        abort_unless($user->role->name === 'admin', 403);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -372,7 +372,7 @@ class MobileApiController extends Controller
     public function deleteRoom(Request $request, Room $room)
     {
         $user = $request->user();
-        abort_unless(in_array($user->role->name, ['admin', 'guru', 'organisasi']), 403);
+        abort_unless($user->role->name === 'admin', 403);
 
         $room->delete();
 

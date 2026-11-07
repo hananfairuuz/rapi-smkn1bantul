@@ -68,14 +68,45 @@ class RoleAccessTest extends TestCase
         $this->actingAs($pic)->get(route('complaints.create'))->assertForbidden();
     }
 
-    public function test_pic_cannot_access_agenda_management_and_guru_cannot_access_rooms(): void
+    public function test_only_admin_can_manage_rooms_while_pic_guru_organisasi_cannot(): void
     {
+        $admin = $this->userWithRole('admin');
         $pic = $this->userWithRole('pic');
         $guru = $this->userWithRole('guru');
+        $organisasi = $this->userWithRole('organisasi');
 
+        $room = Room::create(['name' => 'Lab Komputer']);
+
+        // PIC cannot access agenda management
         $this->actingAs($pic)->get(route('events.index'))->assertForbidden();
-        $this->actingAs($pic)->get(route('rooms.index'))->assertOk();
-        $this->actingAs($guru)->get(route('rooms.index'))->assertForbidden();
+
+        // Admin can access create and edit rooms
+        $this->actingAs($admin)->get(route('rooms.create'))->assertOk();
+        $this->actingAs($admin)->get(route('rooms.edit', $room))->assertOk();
+
+        // PIC, Guru, Organisasi are forbidden from adding, editing, and deleting rooms
+        foreach ([$pic, $guru, $organisasi] as $user) {
+            $this->actingAs($user)->get(route('rooms.create'))->assertForbidden();
+            $this->actingAs($user)->post(route('rooms.store'), ['name' => 'Ruang Baru'])->assertForbidden();
+            $this->actingAs($user)->get(route('rooms.edit', $room))->assertForbidden();
+            $this->actingAs($user)->put(route('rooms.update', $room), ['name' => 'Update'])->assertForbidden();
+            $this->actingAs($user)->delete(route('rooms.destroy', $room))->assertForbidden();
+        }
+
+        // PIC, Guru, Organisasi can access rooms.index but cannot see manage buttons
+        foreach ([$pic, $guru, $organisasi] as $user) {
+            $this->actingAs($user)->get(route('rooms.index'))
+                ->assertOk()
+                ->assertDontSee('+ Tambah Ruangan')
+                ->assertDontSee('Hapus');
+        }
+
+        // Admin sees manage buttons on rooms.index
+        $this->actingAs($admin)->get(route('rooms.index'))
+            ->assertOk()
+            ->assertSee('+ Tambah Ruangan')
+            ->assertSee('Edit')
+            ->assertSee('Hapus');
     }
 
     public function test_guru_only_sees_its_own_agendas(): void

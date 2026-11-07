@@ -587,4 +587,28 @@ class MobileApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('photo');
     }
+
+    public function test_mobile_api_room_management_is_forbidden_for_non_admin(): void
+    {
+        $role = Role::create(['name' => 'guru']);
+        $user = User::create([
+            'name' => 'Guru Penjas',
+            'email' => 'guru.penjas@skansaba.sch.id',
+            'password' => Hash::make('password123'),
+            'role_id' => $role->id,
+        ]);
+        $room = Room::create(['name' => 'Lab Komputer']);
+        $token = $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ])->json('token');
+
+        // Can view rooms
+        $this->withToken($token)->getJson('/api/rooms')->assertOk();
+
+        // Cannot create, update, delete
+        $this->withToken($token)->postJson('/api/rooms', ['name' => 'Ruang Baru'])->assertForbidden();
+        $this->withToken($token)->putJson("/api/rooms/{$room->id}", ['name' => 'Ruang Ganti'])->assertForbidden();
+        $this->withToken($token)->deleteJson("/api/rooms/{$room->id}")->assertForbidden();
+    }
 }

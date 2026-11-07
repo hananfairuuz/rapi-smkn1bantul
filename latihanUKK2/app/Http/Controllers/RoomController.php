@@ -10,7 +10,7 @@ class RoomController extends Controller
 {
     private function canManageRooms(): void
     {
-        abort_unless(in_array(auth()->user()->role?->name, ['admin', 'guru', 'organisasi']), 403);
+        abort_unless(auth()->user()->role?->name === 'admin', 403);
     }
 
     public function index()
@@ -26,7 +26,7 @@ class RoomController extends Controller
         return view('rooms.index', [
             'rooms' => $query->latest()->get(),
             'search' => $search,
-            'canManage' => in_array(auth()->user()->role?->name, ['admin', 'guru', 'organisasi']),
+            'canManage' => auth()->user()->role?->name === 'admin',
         ]);
     }
 

@@ -2,7 +2,7 @@
 
 @section('content')
     @php
-        $canManage = in_array(auth()->user()->role?->name, ['admin', 'guru', 'organisasi']);
+        $canManage = $canManage ?? (auth()->user()->role?->name === 'admin');
     @endphp
 
     <div class="row">
