@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}?v={{ file_exists(public_path('images/favicon.png')) ? filemtime(public_path('images/favicon.png')) : time() }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ file_exists(public_path('css/app.css')) ? filemtime(public_path('css/app.css')) : time() }}">
 </head>
-<body class="auth-page login-page">
+<body class="auth-page login-page" style="background: linear-gradient(rgba(7, 18, 36, 0.22), rgba(7, 18, 36, 0.32)), url('{{ asset('images/school-login-background.jpg') }}?v={{ file_exists(public_path('images/school-login-background.jpg')) ? filemtime(public_path('images/school-login-background.jpg')) : time() }}') center / cover no-repeat fixed !important;">
 <main class="login-layout">
     <section class="login-welcome" aria-label="Selamat datang">
         <a class="login-brand" href="{{ route('calendar') }}">

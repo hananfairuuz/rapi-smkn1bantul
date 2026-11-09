@@ -1055,8 +1055,8 @@ th {
     place-items: center;
     padding: 32px 20px;
     background:
-        linear-gradient(rgb(7 18 36 / 34%), rgb(7 18 36 / 42%)),
-        url("../images/school-login-background.png?v=2") center / cover fixed;
+        linear-gradient(rgb(7 18 36 / 22%), rgb(7 18 36 / 32%)),
+        url("../images/school-login-background.jpg?v=20261109hd") center / cover fixed no-repeat;
 }
 
 .login-layout {
