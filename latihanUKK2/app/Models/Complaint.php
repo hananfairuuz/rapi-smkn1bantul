@@ -9,7 +9,7 @@ class Complaint extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['room_id', 'event_id', 'reporter_id', 'facility_name', 'description', 'photo_path', 'approval_status', 'status_repair', 'repair_notes'];
+    protected $fillable = ['room_id', 'event_id', 'reporter_id', 'facility_name', 'description', 'photo_path', 'approval_status', 'status_repair', 'repair_notes', 'repair_photo_path'];
 
     public function room()
     {

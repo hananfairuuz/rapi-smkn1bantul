@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('events', EventController::class)->except('show');
     Route::resource('complaints', ComplaintController::class)->except('show');
     Route::get('/complaints/{complaint}/photo', [ComplaintController::class, 'photo'])->name('complaints.photo');
+    Route::get('/complaints/{complaint}/repair-photo', [ComplaintController::class, 'repairPhoto'])->name('complaints.repair-photo');
     Route::patch('/complaints/{complaint}/review', [ComplaintController::class, 'review'])->name('complaints.review');
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');

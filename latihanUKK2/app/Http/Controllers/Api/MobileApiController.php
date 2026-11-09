@@ -747,6 +747,14 @@ class MobileApiController extends Controller
         return Storage::disk('public')->response($complaint->photo_path);
     }
 
+    public function complaintRepairPhoto(Request $request, Complaint $complaint)
+    {
+        $this->authorizeComplaintAccess($request, $complaint);
+        abort_unless($complaint->repair_photo_path && Storage::disk('public')->exists($complaint->repair_photo_path), 404);
+
+        return Storage::disk('public')->response($complaint->repair_photo_path);
+    }
+
     public function reviewComplaint(Request $request, Complaint $complaint)
     {
         $this->authorizePicComplaint($request, $complaint);
@@ -766,8 +774,23 @@ class MobileApiController extends Controller
         abort_unless($complaint->approval_status === 'approved', 403, 'Pengaduan harus disetujui PIC sebelum status perbaikan diperbarui.');
         $data = $request->validate([
             'status_repair' => ['required', Rule::in(['Belum Diperbaiki', 'Menunggu Spare Part', 'Sudah Diperbaiki'])],
-            'repair_notes' => ['required_if:status_repair,Sudah Diperbaiki', 'nullable', 'string'],
+            'repair_notes' => ['nullable', 'string'],
+            'repair_photo' => [
+                Rule::requiredIf(fn () => $request->status_repair === 'Sudah Diperbaiki' && ! $complaint->repair_photo_path),
+                'nullable',
+                'image',
+                'max:10240',
+            ],
         ]);
+
+        if ($request->hasFile('repair_photo')) {
+            if ($complaint->repair_photo_path && Storage::disk('public')->exists($complaint->repair_photo_path)) {
+                Storage::disk('public')->delete($complaint->repair_photo_path);
+            }
+            $data['repair_photo_path'] = app(ComplaintPhotoStorage::class)->store($request->file('repair_photo'), 'repair_');
+        }
+        unset($data['repair_photo']);
+
         $complaint->update($data);
 
         return response()->json([
@@ -817,7 +840,7 @@ class MobileApiController extends Controller
             'event_id' => ['nullable', 'exists:events,id'],
             'facility_name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'photo' => ['required', 'image', 'max:5120'],
+            'photo' => ['required', 'image', 'max:10240'],
         ]);
 
         $event = isset($data['event_id']) ? Event::findOrFail($data['event_id']) : null;

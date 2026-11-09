@@ -10,7 +10,7 @@ class ComplaintPhotoStorage
 {
     private const MAX_STORED_BYTES = 1_000_000;
 
-    public function store(UploadedFile $file): string
+    public function store(UploadedFile $file, string $prefix = 'complaint_'): string
     {
         if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
             throw new RuntimeException('Ekstensi GD wajib tersedia untuk mengompres foto pengaduan.');
@@ -39,7 +39,7 @@ class ComplaintPhotoStorage
                 imagefill($target, 0, 0, $white);
                 imagecopyresampled($target, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
 
-                foreach ([82, 72, 62, 52, 42, 32, 22, 12] as $quality) {
+                foreach ([70, 60, 50, 40, 30] as $quality) {
                     ob_start();
                     $encoded = imagejpeg($target, null, $quality);
                     $contents = ob_get_clean();
@@ -67,7 +67,7 @@ class ComplaintPhotoStorage
             }
         }
 
-        $path = 'complaints/'.uniqid('complaint_', true).'.jpg';
+        $path = 'complaints/'.uniqid($prefix, true).'.jpg';
         if (! Storage::disk('public')->put($path, $compressed)) {
             throw new RuntimeException('Foto terkompresi gagal disimpan.');
         }

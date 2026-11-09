@@ -12,7 +12,10 @@
             <p><strong>Fasilitas rusak:</strong> {{ $complaint->facility_name }}</p>
             <p><strong>Penjelasan pelapor:</strong><br>{{ $complaint->description }}</p>
             @if($complaint->photo_path)
-                <p><a href="{{ route('complaints.photo', $complaint) }}" target="_blank">Lihat foto bukti</a></p>
+                <p><strong>Foto Bukti Kerusakan:</strong> <a href="{{ route('complaints.photo', $complaint) }}" target="_blank">Lihat foto bukti</a></p>
+            @endif
+            @if($complaint->repair_photo_path)
+                <p><strong>Foto Bukti Perbaikan Saat Ini:</strong> <a href="{{ route('complaints.repair-photo', $complaint) }}" target="_blank">Lihat foto barang selesai diperbaiki</a></p>
             @endif
             <label for="status_repair">Status perbaikan</label>
             <select id="status_repair" name="status_repair" required>
@@ -20,9 +23,30 @@
                 <option value="Menunggu Spare Part" @selected(old('status_repair', $complaint->status_repair) === 'Menunggu Spare Part')>Menunggu Spare Part</option>
                 <option value="Sudah Diperbaiki" @selected(old('status_repair', $complaint->status_repair) === 'Sudah Diperbaiki')>Sudah Diperbaiki</option>
             </select>
-            <label id="repair-notes-label" for="repair_notes">Catatan PIC (opsional)</label>
+            <div id="repair-photo-container">
+                <label for="repair_photo">Foto Bukti Barang yang Sudah Diperbaiki (maks. 10MB) <span id="repair-photo-required-tag" style="color:var(--danger, #ef4444); font-size: 0.85em;">(wajib jika status Sudah Diperbaiki)</span></label>
+                <input id="repair_photo" type="file" name="repair_photo" accept="image/*" hidden>
+                <input id="repair-camera-photo" type="file" accept="image/*" capture="environment" hidden>
+                <div class="actions">
+                    <button id="repair-choose-photo" class="secondary" type="button">Pilih file</button>
+                    <button id="repair-take-photo" class="secondary" type="button">Buka kamera</button>
+                </div>
+                <p class="muted">Pilih file membuka galeri atau berkas. Buka kamera menggunakan kamera perangkat.</p>
+                <p id="repair-photo-message" class="muted" role="status" aria-live="polite"></p>
+                <video id="repair-camera-preview" autoplay playsinline muted hidden style="width:100%;max-width:480px;border-radius:8px"></video>
+                <div id="repair-camera-actions" hidden>
+                    <button id="repair-capture-photo" class="secondary" type="button">Ambil foto</button>
+                    <button id="repair-close-camera" class="secondary" type="button">Tutup kamera</button>
+                </div>
+                <img id="repair-photo-preview" alt="Pratinjau foto bukti perbaikan" hidden style="width:100%;max-width:480px;border-radius:8px">
+                <div id="repair-photo-actions" hidden>
+                    <button id="repair-remove-photo" class="danger" type="button">Hapus foto</button>
+                </div>
+                @error('repair_photo')<p class="error">{{ $message }}</p>@enderror
+            </div>
+            <label id="repair-notes-label" for="repair_notes">Catatan PIC / Keterangan Perbaikan (opsional)</label>
             <p id="repair-notes-help" class="muted" role="status" aria-live="polite"></p>
-            <textarea id="repair_notes" name="repair_notes" placeholder="Jelaskan tindakan perbaikan yang dilakukan.">{{ old('repair_notes', $complaint->repair_notes) }}</textarea>
+            <textarea id="repair_notes" name="repair_notes" placeholder="Jelaskan tindakan perbaikan yang dilakukan (opsional).">{{ old('repair_notes', $complaint->repair_notes) }}</textarea>
             @error('repair_notes')<p class="error">{{ $message }}</p>@enderror
         @else
             @if($isAdmin)
@@ -83,7 +107,7 @@
             <input id="facility_name" name="facility_name" value="{{ old('facility_name') }}" required>
             <label for="description">Penjelasan kerusakan</label>
             <textarea id="description" name="description" required>{{ old('description') }}</textarea>
-            <label for="photo">Foto bukti (JPG/PNG, maks. 5MB) @if(auth()->user()->role?->name !== 'admin')<small>(wajib)</small>@else<small>(opsional)</small>@endif</label>
+            <label for="photo">Foto bukti (JPG/PNG, maks. 10MB) @if(auth()->user()->role?->name !== 'admin')<small>(wajib)</small>@else<small>(opsional)</small>@endif</label>
             <input id="photo" type="file" name="photo" accept="image/*" hidden>
             <input id="camera-photo" type="file" accept="image/*" capture="environment" hidden>
             <div class="actions">
@@ -161,7 +185,7 @@
             }
 
             function useSelectedPhoto(file) {
-                if (file.size > 5 * 1024 * 1024) {
+                if (file.size > 10 * 1024 * 1024) {
                     photoInput.value = '';
                     cameraPhotoInput.value = '';
                     photoPreview.hidden = true;
@@ -170,7 +194,7 @@
                         URL.revokeObjectURL(photoPreviewUrl);
                         photoPreviewUrl = null;
                     }
-                    photoMessage.textContent = 'Ukuran foto melebihi batas maksimal 5MB.';
+                    photoMessage.textContent = 'Ukuran foto melebihi batas maksimal 10MB.';
                     photoMessage.className = 'error';
                     return;
                 }
@@ -340,20 +364,202 @@
             const repairNotes = document.getElementById('repair_notes');
             const repairNotesLabel = document.getElementById('repair-notes-label');
             const repairNotesHelp = document.getElementById('repair-notes-help');
+            const repairPhotoInput = document.getElementById('repair_photo');
+            const repairCameraInput = document.getElementById('repair-camera-photo');
+            const repairChooseBtn = document.getElementById('repair-choose-photo');
+            const repairTakeBtn = document.getElementById('repair-take-photo');
+            const repairCaptureBtn = document.getElementById('repair-capture-photo');
+            const repairCloseCameraBtn = document.getElementById('repair-close-camera');
+            const repairCameraActions = document.getElementById('repair-camera-actions');
+            const repairCameraPreview = document.getElementById('repair-camera-preview');
+            const repairPhotoPreview = document.getElementById('repair-photo-preview');
+            const repairPhotoActions = document.getElementById('repair-photo-actions');
+            const repairRemoveBtn = document.getElementById('repair-remove-photo');
+            const repairPhotoMessage = document.getElementById('repair-photo-message');
+            const repairPhotoTag = document.getElementById('repair-photo-required-tag');
+            const hasExistingRepairPhoto = {{ $complaint->repair_photo_path ? 'true' : 'false' }};
+            const updateForm = repairPhotoInput ? repairPhotoInput.form : null;
 
-            function updateRepairNotesRequirement() {
-                const isRepaired = repairStatus.value === 'Sudah Diperbaiki';
-                repairNotes.required = isRepaired;
-                repairNotesLabel.textContent = isRepaired
-                    ? 'Keterangan Perbaikan (wajib)'
-                    : 'Catatan PIC (opsional)';
-                repairNotesHelp.textContent = isRepaired
-                    ? 'Jelaskan perbaikan yang telah dilakukan pada barang/fasilitas ini.'
-                    : 'Tambahkan catatan jika diperlukan.';
+            let repairPreviewUrl = null;
+            let repairCameraStream = null;
+
+            function isMobileDevice() {
+                return navigator.userAgentData?.mobile
+                    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             }
 
-            repairStatus.addEventListener('change', updateRepairNotesRequirement);
-            updateRepairNotesRequirement();
+            function showRepairPreview(file) {
+                if (repairPreviewUrl) {
+                    URL.revokeObjectURL(repairPreviewUrl);
+                }
+                repairPreviewUrl = URL.createObjectURL(file);
+                repairPhotoPreview.src = repairPreviewUrl;
+                repairPhotoPreview.hidden = false;
+            }
+
+            function useSelectedRepairPhoto(file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    repairPhotoInput.value = '';
+                    repairCameraInput.value = '';
+                    repairPhotoPreview.hidden = true;
+                    repairPhotoActions.hidden = true;
+                    if (repairPreviewUrl) {
+                        URL.revokeObjectURL(repairPreviewUrl);
+                        repairPreviewUrl = null;
+                    }
+                    repairPhotoMessage.textContent = 'Ukuran foto melebihi batas maksimal 10MB.';
+                    repairPhotoMessage.className = 'error';
+                    return;
+                }
+
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                repairPhotoInput.files = transfer.files;
+                showRepairPreview(file);
+                repairPhotoActions.hidden = false;
+                repairPhotoMessage.textContent = 'Foto bukti perbaikan siap dilampirkan.';
+                repairPhotoMessage.className = 'success';
+            }
+
+            function removeSelectedRepairPhoto() {
+                repairPhotoInput.value = '';
+                repairCameraInput.value = '';
+                repairPhotoPreview.hidden = true;
+                repairPhotoPreview.removeAttribute('src');
+                repairPhotoActions.hidden = true;
+                if (repairPreviewUrl) {
+                    URL.revokeObjectURL(repairPreviewUrl);
+                    repairPreviewUrl = null;
+                }
+                repairPhotoMessage.textContent = 'Foto dihapus. Pilih file atau buka kamera untuk menambahkan foto.';
+                repairPhotoMessage.className = 'muted';
+            }
+
+            function stopRepairCamera() {
+                repairCameraStream?.getTracks().forEach(track => track.stop());
+                repairCameraStream = null;
+                repairCameraPreview.srcObject = null;
+                repairCameraPreview.hidden = true;
+                repairCameraActions.hidden = true;
+                repairTakeBtn.disabled = false;
+            }
+
+            async function openRepairCamera() {
+                if (isMobileDevice()) {
+                    repairCameraInput.click();
+                    return;
+                }
+
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    repairPhotoMessage.textContent = 'Kamera browser tidak tersedia. Buka halaman melalui HTTPS dan pastikan perangkat memiliki kamera.';
+                    repairPhotoMessage.className = 'error';
+                    return;
+                }
+
+                repairTakeBtn.disabled = true;
+                repairPhotoMessage.textContent = 'Meminta izin kamera...';
+                repairPhotoMessage.className = 'muted';
+
+                try {
+                    repairCameraStream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: true
+                    });
+                    repairCameraPreview.srcObject = repairCameraStream;
+                    await repairCameraPreview.play();
+                    repairCameraPreview.hidden = false;
+                    repairCameraActions.hidden = false;
+                    repairTakeBtn.disabled = false;
+                    repairPhotoMessage.textContent = 'Kamera aktif. Ambil foto saat siap.';
+                    repairPhotoMessage.className = 'muted';
+                } catch (error) {
+                    stopRepairCamera();
+                    repairPhotoMessage.textContent = error.name === 'NotAllowedError'
+                        ? 'Izin kamera ditolak. Izinkan akses kamera di browser lalu coba lagi.'
+                        : error.name === 'NotFoundError'
+                            ? 'Kamera tidak ditemukan. Pastikan kamera terhubung.'
+                            : 'Kamera tidak dapat dibuka. Periksa izin kamera dan coba lagi.';
+                    repairPhotoMessage.className = 'error';
+                } finally {
+                    repairTakeBtn.disabled = false;
+                }
+            }
+
+            function captureRepairPhoto() {
+                if (!repairCameraPreview.videoWidth || !repairCameraPreview.videoHeight) {
+                    repairPhotoMessage.textContent = 'Kamera belum siap. Tunggu sebentar lalu coba lagi.';
+                    repairPhotoMessage.className = 'error';
+                    return;
+                }
+
+                const scale = Math.min(1, 1600 / Math.max(repairCameraPreview.videoWidth, repairCameraPreview.videoHeight));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(repairCameraPreview.videoWidth * scale);
+                canvas.height = Math.round(repairCameraPreview.videoHeight * scale);
+                canvas.getContext('2d').drawImage(repairCameraPreview, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    if (!blob) {
+                        repairPhotoMessage.textContent = 'Foto gagal diproses. Silakan coba lagi.';
+                        repairPhotoMessage.className = 'error';
+                        return;
+                    }
+
+                    useSelectedRepairPhoto(new File([blob], 'foto-perbaikan.jpg', { type: 'image/jpeg' }));
+                    stopRepairCamera();
+                }, 'image/jpeg', 0.85);
+            }
+
+            function updateRepairRequirements() {
+                const isRepaired = repairStatus.value === 'Sudah Diperbaiki';
+                repairNotes.required = false;
+                repairNotesLabel.textContent = 'Catatan PIC / Keterangan Perbaikan (opsional)';
+                repairNotesHelp.textContent = isRepaired
+                    ? 'Keterangan perbaikan bersifat opsional.'
+                    : 'Tambahkan catatan jika diperlukan.';
+
+                if (isRepaired && !hasExistingRepairPhoto) {
+                    if (repairPhotoTag) repairPhotoTag.textContent = '(wajib saat status Sudah Diperbaiki)';
+                } else {
+                    if (repairPhotoTag) repairPhotoTag.textContent = hasExistingRepairPhoto ? '(sudah ada foto bukti perbaikan)' : '(opsional)';
+                }
+            }
+
+            repairChooseBtn.addEventListener('click', () => repairPhotoInput.click());
+            repairTakeBtn.addEventListener('click', openRepairCamera);
+            repairCaptureBtn.addEventListener('click', captureRepairPhoto);
+            repairCloseCameraBtn.addEventListener('click', stopRepairCamera);
+            repairRemoveBtn.addEventListener('click', removeSelectedRepairPhoto);
+
+            repairPhotoInput.addEventListener('change', () => {
+                if (repairPhotoInput.files.length) {
+                    stopRepairCamera();
+                    useSelectedRepairPhoto(repairPhotoInput.files[0]);
+                }
+            });
+
+            repairCameraInput.addEventListener('change', () => {
+                if (repairCameraInput.files.length) {
+                    stopRepairCamera();
+                    useSelectedRepairPhoto(repairCameraInput.files[0]);
+                }
+            });
+
+            window.addEventListener('pagehide', stopRepairCamera);
+
+            if (updateForm) {
+                updateForm.addEventListener('submit', event => {
+                    const isRepaired = repairStatus.value === 'Sudah Diperbaiki';
+                    if (isRepaired && !hasExistingRepairPhoto && (!repairPhotoInput.files || !repairPhotoInput.files.length)) {
+                        event.preventDefault();
+                        repairPhotoMessage.textContent = 'Foto bukti perbaikan wajib dilampirkan saat status Sudah Diperbaiki.';
+                        repairPhotoMessage.className = 'error';
+                        repairChooseBtn.focus();
+                    }
+                });
+            }
+
+            repairStatus.addEventListener('change', updateRepairRequirements);
+            updateRepairRequirements();
         </script>
     @endif
 @endsection

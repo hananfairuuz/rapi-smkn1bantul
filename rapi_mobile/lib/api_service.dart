@@ -244,12 +244,25 @@ class ApiService {
   Future<Map<String, dynamic>> updateComplaintRepair(
     int id,
     String status,
-    String notes,
-  ) => _request(
-    'PATCH',
-    '/complaints/$id/repair',
-    body: {'status_repair': status, 'repair_notes': notes},
-  );
+    String? notes, {
+    String? repairPhotoPath,
+  }) async {
+    final request =
+        http.MultipartRequest('POST', _uri('/complaints/$id/repair'))
+          ..headers.addAll(_headers())
+          ..fields['status_repair'] = status;
+    if (notes != null && notes.trim().isNotEmpty) {
+      request.fields['repair_notes'] = notes.trim();
+    }
+    if (repairPhotoPath != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('repair_photo', repairPhotoPath),
+      );
+    }
+    final streamedResponse = await _send(request.send);
+    final response = await http.Response.fromStream(streamedResponse);
+    return _decode(response);
+  }
 
   Future<Map<String, dynamic>> getNotifications() =>
       _request('GET', '/notifications');
@@ -261,6 +274,8 @@ class ApiService {
       _request('PATCH', '/notifications/$id/read');
 
   Uri complaintPhotoUri(int id) => _uri('/complaints/$id/photo');
+
+  Uri complaintRepairPhotoUri(int id) => _uri('/complaints/$id/repair-photo');
 
   Map<String, String> get requestHeaders => _headers();
 

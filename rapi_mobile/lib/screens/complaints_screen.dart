@@ -115,13 +115,15 @@ class ComplaintsScreenState extends State<ComplaintsScreen> {
   Future<void> _updateRepair(
     int id,
     String currentStatus,
-    String? currentNotes,
-  ) async {
+    String? currentNotes, {
+    bool hasExistingPhoto = false,
+  }) async {
     final update = await showDialog<Map<String, String>>(
       context: context,
       builder: (_) => RepairUpdateDialog(
         initialStatus: currentStatus,
         initialNotes: currentNotes,
+        hasExistingPhoto: hasExistingPhoto,
       ),
     );
     if (update == null) return;
@@ -129,7 +131,8 @@ class ComplaintsScreenState extends State<ComplaintsScreen> {
       await widget.api.updateComplaintRepair(
         id,
         update['status_repair']!,
-        update['repair_notes']!,
+        update['repair_notes'],
+        repairPhotoPath: update['repair_photo_path'],
       );
       await _reload();
       if (mounted) {
@@ -256,6 +259,8 @@ class ComplaintsScreenState extends State<ComplaintsScreen> {
                           asMap(complaint)['status_repair']?.toString() ??
                               'Belum Diperbaiki',
                           asMap(complaint)['repair_notes']?.toString(),
+                          hasExistingPhoto:
+                              asMap(complaint)['repair_photo_path'] != null,
                         ),
                       ),
                     ),
@@ -478,6 +483,84 @@ class ComplaintCard extends StatelessWidget {
                 style: TextStyle(color: ink, fontSize: 12),
               ),
             ],
+            if (data['repair_photo_path'] != null) ...[
+              const SizedBox(height: 10),
+              InkWell(
+                onTap: () {
+                  PhotoViewDialog.show(
+                    context,
+                    api.complaintRepairPhotoUri(data['id'] as int),
+                    api.requestHeaders,
+                    title:
+                        'Foto Perbaikan: ${data['facility_name'] ?? 'Bukti Selesai'}',
+                  );
+                },
+                borderRadius: BorderRadius.circular(9),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(
+                      color: success.withValues(alpha: 0.6),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          api
+                              .complaintRepairPhotoUri(data['id'] as int)
+                              .toString(),
+                          headers: api.requestHeaders,
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            height: 80,
+                            color: canvas,
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'Foto bukti perbaikan tidak dapat dimuat.',
+                              style: TextStyle(color: muted, fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle,
+                                color: success, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'Bukti Selesai Diperbaiki',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             if (canManage && approval == 'pending') ...[
               const SizedBox(height: 14),
               Row(
@@ -604,13 +687,13 @@ class _ComplaintFormState extends State<ComplaintForm> {
 
   Future<void> _pickPhoto(ImageSource source) async {
     try {
-      final image = await _picker.pickImage(source: source);
+      final image = await _picker.pickImage(source: source, imageQuality: 70);
       if (image == null) return;
       final fileSize = await File(image.path).length();
-      if (fileSize > 5 * 1024 * 1024) {
+      if (fileSize > 10 * 1024 * 1024) {
         setState(() {
           _photoPath = null;
-          _error = 'Ukuran foto maksimal 5 MB sebelum dikompres.';
+          _error = 'Ukuran foto maksimal 10 MB.';
         });
         return;
       }
@@ -915,11 +998,13 @@ class RepairUpdateDialog extends StatefulWidget {
   const RepairUpdateDialog({
     this.initialStatus = 'Belum Diperbaiki',
     this.initialNotes,
+    this.hasExistingPhoto = false,
     super.key,
   });
 
   final String initialStatus;
   final String? initialNotes;
+  final bool hasExistingPhoto;
 
   @override
   State<RepairUpdateDialog> createState() => _RepairUpdateDialogState();
@@ -927,8 +1012,11 @@ class RepairUpdateDialog extends StatefulWidget {
 
 class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
   late String _status;
   late final TextEditingController _notes;
+  String? _repairPhotoPath;
+  String? _photoError;
 
   @override
   void initState() {
@@ -943,8 +1031,49 @@ class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
     super.dispose();
   }
 
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final image = await _picker.pickImage(source: source, imageQuality: 70);
+      if (image == null) return;
+      final fileSize = await File(image.path).length();
+      if (fileSize > 10 * 1024 * 1024) {
+        setState(() {
+          _repairPhotoPath = null;
+          _photoError = 'Ukuran foto maksimal 10 MB.';
+        });
+        return;
+      }
+      setState(() {
+        _repairPhotoPath = image.path;
+        _photoError = null;
+      });
+    } catch (e) {
+      setState(() => _photoError = 'Gagal mengambil foto: $e');
+    }
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    if (_status == 'Sudah Diperbaiki' &&
+        _repairPhotoPath == null &&
+        !widget.hasExistingPhoto) {
+      setState(() {
+        _photoError = 'Foto barang yang sudah diperbaiki wajib disertakan.';
+      });
+      return;
+    }
+
+    Navigator.pop(context, {
+      'status_repair': _status,
+      'repair_notes': _notes.text.trim(),
+      if (_repairPhotoPath != null) 'repair_photo_path': _repairPhotoPath!,
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isRepaired = _status == 'Sudah Diperbaiki';
+
     return AlertDialog(
       title: const Text('Perbarui Status Perbaikan'),
       content: SingleChildScrollView(
@@ -973,29 +1102,127 @@ class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
                     child: Text('Sudah Diperbaiki'),
                   ),
                 ],
-                onChanged: (value) =>
-                    setState(() => _status = value ?? _status),
+                onChanged: (value) => setState(() {
+                  _status = value ?? _status;
+                  _photoError = null;
+                }),
               ),
+              if (isRepaired) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: canvas,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _photoError != null
+                          ? danger
+                          : success.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 16,
+                            color: _photoError != null ? danger : success,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              widget.hasExistingPhoto
+                                  ? 'Foto Bukti Perbaikan (Ada Sebelumnya)'
+                                  : 'Foto Bukti Perbaikan (Wajib)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _photoError != null ? danger : ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_repairPhotoPath != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              Image.file(
+                                File(_repairPhotoPath!),
+                                height: 120,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.cancel,
+                                    color: Colors.white, size: 22),
+                                onPressed: () =>
+                                    setState(() => _repairPhotoPath = null),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ] else if (widget.hasExistingPhoto) ...[
+                        const Text(
+                          'Foto bukti perbaikan sudah tersedia. Unggah foto baru jika ingin menggantinya.',
+                          style: TextStyle(fontSize: 11, color: muted),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  _pickPhoto(ImageSource.camera),
+                              icon: const Icon(Icons.camera_alt, size: 16),
+                              label: const Text('Kamera',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  _pickPhoto(ImageSource.gallery),
+                              icon: const Icon(Icons.photo_library, size: 16),
+                              label: const Text('Galeri',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_photoError != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          _photoError!,
+                          style: const TextStyle(
+                            color: danger,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notes,
                 minLines: 2,
                 maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: _status == 'Sudah Diperbaiki'
-                      ? 'Keterangan Perbaikan (Wajib)'
-                      : 'Catatan PIC (Opsional)',
-                  hintText: _status == 'Sudah Diperbaiki'
-                      ? 'Jelaskan perbaikan yang telah dilakukan.'
-                      : 'Contoh: Sedang menunggu pengiriman komponen...',
+                decoration: const InputDecoration(
+                  labelText: 'Catatan PIC / Keterangan (Opsional)',
+                  hintText:
+                      'Contoh: Sudah diganti kabel baru dan dites normal...',
                 ),
-                validator: (value) {
-                  if (_status == 'Sudah Diperbaiki' &&
-                      (value == null || value.trim().isEmpty)) {
-                    return 'Keterangan wajib diisi jika barang sudah diperbaiki.';
-                  }
-                  return null;
-                },
               ),
             ],
           ),
@@ -1007,13 +1234,7 @@ class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
           child: const Text('Batal'),
         ),
         FilledButton(
-          onPressed: () {
-            if (!_formKey.currentState!.validate()) return;
-            Navigator.pop(context, {
-              'status_repair': _status,
-              'repair_notes': _notes.text.trim(),
-            });
-          },
+          onPressed: _submit,
           child: const Text('Simpan'),
         ),
       ],

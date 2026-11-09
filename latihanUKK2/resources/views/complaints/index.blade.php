@@ -36,9 +36,20 @@
                     <p>Catatan PIC: {{ $complaint->repair_notes }}</p>
                 @endif
             </div>
-            @if($complaint->photo_path)
-                <a href="{{ route('complaints.photo', $complaint) }}" target="_blank"><img src="{{ route('complaints.photo', $complaint) }}" alt="Foto bukti" style="max-width:120px;max-height:100px"></a>
-            @endif
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+                @if($complaint->photo_path)
+                    <div style="text-align:center">
+                        <small class="muted" style="display:block;margin-bottom:4px">Kerusakan</small>
+                        <a href="{{ route('complaints.photo', $complaint) }}" target="_blank"><img src="{{ route('complaints.photo', $complaint) }}" alt="Foto bukti kerusakan" style="max-width:110px;max-height:90px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>
+                    </div>
+                @endif
+                @if($complaint->repair_photo_path)
+                    <div style="text-align:center">
+                        <small style="display:block;margin-bottom:4px;color:#10b981;font-weight:600">Perbaikan</small>
+                        <a href="{{ route('complaints.repair-photo', $complaint) }}" target="_blank"><img src="{{ route('complaints.repair-photo', $complaint) }}" alt="Foto bukti perbaikan" style="max-width:110px;max-height:90px;border-radius:6px;border:1.5px solid #10b981;object-fit:cover;"></a>
+                    </div>
+                @endif
+            </div>
         </div>
         <div class="actions">
             @if(auth()->user()->role?->name === 'pic' && $complaint->approval_status === 'pending')

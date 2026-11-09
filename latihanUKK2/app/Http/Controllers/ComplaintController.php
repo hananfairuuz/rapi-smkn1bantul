@@ -102,7 +102,17 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
     {
         $this->mayManage($complaint);
         abort_unless($complaint->approval_status === 'approved', 403, 'Pengaduan harus disetujui PIC sebelum status perbaikan diperbarui.');
-        $complaint->update($this->validatedForUpdate($request));
+        $data = $this->validatedForUpdate($request, $complaint);
+
+        if ($request->hasFile('repair_photo')) {
+            if ($complaint->repair_photo_path && Storage::disk('public')->exists($complaint->repair_photo_path)) {
+                Storage::disk('public')->delete($complaint->repair_photo_path);
+            }
+            $data['repair_photo_path'] = app(ComplaintPhotoStorage::class)->store($request->file('repair_photo'), 'repair_');
+        }
+        unset($data['repair_photo']);
+
+        $complaint->update($data);
         $complaint->load('room');
 
         SystemNotification::create([
@@ -162,15 +172,16 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
             'event_id' => 'nullable|exists:events,id',
             'facility_name' => 'required|string|max:255',
             'description' => 'required|string',
-            'photo' => ($admin ? 'nullable' : 'required').'|image|max:5120',
+            'photo' => ($admin ? 'nullable' : 'required').'|image|max:10240',
         ]);
     }
 
-    private function validatedForUpdate(Request $request): array
+    private function validatedForUpdate(Request $request, Complaint $complaint): array
     {
         return $request->validate([
             'status_repair' => 'required|in:Belum Diperbaiki,Menunggu Spare Part,Sudah Diperbaiki',
-            'repair_notes' => 'required_if:status_repair,Sudah Diperbaiki|nullable|string',
+            'repair_notes' => 'nullable|string',
+            'repair_photo' => ($request->status_repair === 'Sudah Diperbaiki' && !$complaint->repair_photo_path ? 'required' : 'nullable') . '|image|max:10240',
         ]);
     }
 
@@ -179,5 +190,12 @@ return view('complaints.index', ['complaints' => $query->orderByDesc('created_at
         abort_unless($complaint->photo_path && Storage::disk('public')->exists($complaint->photo_path), 404);
 
         return Storage::disk('public')->response($complaint->photo_path);
+    }
+
+    public function repairPhoto(Complaint $complaint)
+    {
+        abort_unless($complaint->repair_photo_path && Storage::disk('public')->exists($complaint->repair_photo_path), 404);
+
+        return Storage::disk('public')->response($complaint->repair_photo_path);
     }
 }
