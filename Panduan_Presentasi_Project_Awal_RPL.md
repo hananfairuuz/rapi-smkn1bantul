@@ -322,10 +322,15 @@ Lakukan pengecekan ini 15 menit sebelum giliran Anda dipanggil:
 - [ ] **HP Android:**
   - Aplikasi *RAPI Mobile* sudah terpasang versi terbaru (APK v1.0.3+).
   - Sudah dicoba buka dan berhasil login.
-- [ ] **Akun Pengujian Siap di Catatan:**
-  - Akun Admin: misal `admin@sekolah.sch.id`
-  - Akun PIC: misal `pic@sekolah.sch.id`
-  - Akun Guru: misal `guru@sekolah.sch.id`
+- [ ] **Akun Pengujian Siap di Catatan (Password: `password123`):**
+  - Akun Admin: `admin@rapi.test` (atau `hananmusyaffa@gmail.com`)
+  - Akun PIC Lab & Ruangan:
+    - `legadanukumara@gmail.com` (PIC 8 Lab: Lab 2, 4, 6, 8, 11, 14, 19, 21)
+    - `wahidabduraman@gmail.com` (PIC 6 Lab: Lab 3, 9, 16, 17, 20, 22)
+    - `heriprasetyo@gmail.com` (PIC 7 Lab: Lab 1, 5, 7, 10, 12, 13, 18)
+    - `arifkurniawan@gmail.com` (PIC Ruang Wijaya Kusuma)
+  - Akun Guru: `guru@rapi.test`
+  - Akun Organisasi: `organisasi@rapi.test`
 - [ ] **VS Code:** Sudah membuka folder `c:\laragon\www\ukk_rapi` (siap jika diminta membuka baris kodingan).
 - [ ] **Mental & Sikap:** Tarik napas dalam-dalam, tersenyum, tatap mata penguji, dan berbicaralah dengan tenang dan santai. Anda sudah membangun sistem yang hebat!
 

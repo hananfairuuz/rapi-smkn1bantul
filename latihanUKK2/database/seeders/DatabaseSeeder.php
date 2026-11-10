@@ -41,9 +41,13 @@ class DatabaseSeeder extends Seeder
             'guru' => ['Guru RAPI', 'guru@rapi.test', '628333333333'],
             'organisasi' => ['Organisasi RAPI', 'organisasi@rapi.test', '628444444444'],
             'hanan' => ['Hanan Musyaffa', 'hananmusyaffa@gmail.com', '628111111111'],
+            'danu' => ['Lega Danu Kumara', 'legadanukumara@gmail.com', '6281234567001'],
+            'wahid' => ['Wahid Abduraman', 'wahidabduraman@gmail.com', '6281234567002'],
+            'heri' => ['Heri Prasetyo', 'heriprasetyo@gmail.com', '6281234567003'],
+            'arif' => ['Arif Kurniawan', 'arifkurniawan@gmail.com', '6281234567004'],
         ];
-        foreach ($users as $role => $data) {
-            $roleKey = $role === 'hanan' ? 'admin' : $role;
+        foreach ($users as $key => $data) {
+            $roleKey = in_array($key, ['danu', 'wahid', 'heri', 'arif']) ? 'pic' : ($key === 'hanan' ? 'admin' : $key);
             User::firstOrCreate(
                 ['email' => $data[1]],
                 [
@@ -56,14 +60,46 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 3. Buat ruangan percontohan yang sudah dihubungkan ke akun PIC Ruang
-        Room::firstOrCreate(
-            ['name' => 'Laboratorium Komputer'],
-            [
-                'location' => 'Gedung A Lt. 2',
-                'description' => 'Ruang praktik komputer',
-                'pic_id' => User::where('email', 'pic@rapi.test')->value('id'),
-            ]
-        );
+        // 3. Buat master ruangan sekolah & lab komputer beserta penugasan PIC
+        $picDanuId = User::where('email', 'legadanukumara@gmail.com')->value('id');
+        $picWahidId = User::where('email', 'wahidabduraman@gmail.com')->value('id');
+        $picHeriId = User::where('email', 'heriprasetyo@gmail.com')->value('id');
+        $picArifId = User::where('email', 'arifkurniawan@gmail.com')->value('id');
+
+        $rooms = [
+            // PIC: Heri Prasetyo
+            ['name' => 'Lab 1',  'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 1', 'description' => 'Laboratorium Praktik Komputer & Jaringan Dasar'],
+            ['name' => 'Lab 5',  'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 2', 'description' => 'Laboratorium Komputer & Rekayasa Perangkat Lunak'],
+            ['name' => 'Lab 7',  'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 2', 'description' => 'Laboratorium Desain Komunikasi Visual & Multimedia'],
+            ['name' => 'Lab 10', 'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 3', 'description' => 'Laboratorium Pemrograman & Basis Data'],
+            ['name' => 'Lab 12', 'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 3', 'description' => 'Laboratorium Perakitan Komputer & Hardware'],
+            ['name' => 'Lab 13', 'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 3', 'description' => 'Laboratorium Sistem Informasi & Administrasi'],
+            ['name' => 'Lab 18', 'pic_id' => $picHeriId,  'capacity' => 36, 'location' => 'Gedung CBT Lt. 2', 'description' => 'Laboratorium Komputer & Uji Kompetensi Keahlian'],
+
+            // PIC: Lega Danu Kumara
+            ['name' => 'Lab 2',  'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 1', 'description' => 'Laboratorium Pemrograman Web & Mobile'],
+            ['name' => 'Lab 4',  'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 1', 'description' => 'Laboratorium Praktik Algoritma & Cloud Computing'],
+            ['name' => 'Lab 6',  'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 2', 'description' => 'Laboratorium Jaringan Komputer & Cyber Security'],
+            ['name' => 'Lab 8',  'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 2', 'description' => 'Laboratorium Database & Pengembangan Aplikasi'],
+            ['name' => 'Lab 11', 'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 3', 'description' => 'Laboratorium Animasi & Grafika Digital'],
+            ['name' => 'Lab 14', 'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung TI Lt. 3', 'description' => 'Laboratorium Riset & Inovasi Perangkat Lunak'],
+            ['name' => 'Lab 19', 'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung CBT Lt. 2', 'description' => 'Laboratorium CBT & Simulasi Ujian Mandiri'],
+            ['name' => 'Lab 21', 'pic_id' => $picDanuId,  'capacity' => 36, 'location' => 'Gedung CBT Lt. 3', 'description' => 'Laboratorium Terpadu Komputer & Asesmen Nasional'],
+
+            // PIC: Wahid Abduraman
+            ['name' => 'Lab 3',  'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung TI Lt. 1', 'description' => 'Laboratorium Pemrograman Dasar & Logika Komputer'],
+            ['name' => 'Lab 9',  'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung TI Lt. 2', 'description' => 'Laboratorium Jaringan Nirkabel & Mikrotik'],
+            ['name' => 'Lab 16', 'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung CBT Lt. 1', 'description' => 'Laboratorium Komputerisasi Akuntansi & Administrasi'],
+            ['name' => 'Lab 17', 'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung CBT Lt. 1', 'description' => 'Laboratorium Uji CBT Terpadu & Simulasi'],
+            ['name' => 'Lab 20', 'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung CBT Lt. 2', 'description' => 'Laboratorium Sertifikasi Profesi & BNSP'],
+            ['name' => 'Lab 22', 'pic_id' => $picWahidId, 'capacity' => 36, 'location' => 'Gedung CBT Lt. 3', 'description' => 'Laboratorium Komputer Terpadu & Server Pusat'],
+
+            // PIC: Arif Kurniawan
+            ['name' => 'Ruang Wijaya Kusuma', 'pic_id' => $picArifId, 'capacity' => 144, 'location' => 'Gedung Utama Lt. 1', 'description' => 'Aula serbaguna pertemuan rapat dinas, seminar besar, dan presentasi sekolah'],
+        ];
+
+        foreach ($rooms as $room) {
+            Room::firstOrCreate(['name' => $room['name']], $room);
+        }
     }
 }
