@@ -10,15 +10,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
+/**
+ * Controller Manajemen Akun Pengguna (User Management)
+ *
+ * Mengelola hak akses dan akun pengguna sistem RAPI:
+ * - Mengelompokkan pengguna berdasarkan peran: Admin, PIC Ruang, Guru, Organisasi.
+ * - CRUD akun pengguna lengkap dengan nomor WhatsApp untuk integrasi notifikasi.
+ * - Fitur Impor Data Massal dari file Excel (.xlsx), Word (.docx), atau CSV (.csv).
+ */
 class UserController extends Controller
 {
     private const MANAGED_ROLES = ['admin', 'pic', 'guru', 'organisasi'];
 
+    /**
+     * Helper Keamanan: Memastikan hanya user ber-role 'admin' yang bisa mengakses manajemen pengguna.
+     */
     private function admin(): void
     {
         abort_unless(auth()->user()->role?->name === 'admin', 403);
     }
 
+    /**
+     * Menampilkan daftar pengguna dikelompokkan berdasarkan peran (Role Groups).
+     */
     public function index()
     {
         $this->admin();
@@ -45,6 +59,9 @@ class UserController extends Controller
         return view('users.index', compact('roleGroups', 'search'));
     }
 
+    /**
+     * Form Tambah Akun Pengguna Baru.
+     */
     public function create()
     {
         $this->admin();

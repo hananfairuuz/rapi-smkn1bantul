@@ -1,3 +1,12 @@
+{{--
+    Halaman Daftar Pengaduan Fasilitas & Sarpras Rusak
+    Fitur:
+    1. Filter & tampilan daftar pengaduan (foto kerusakan awal + foto bukti perbaikan PIC).
+    2. Status persetujuan PIC (Menunggu, Disetujui, Ditolak).
+    3. Status fisik perbaikan (Belum Diperbaiki, Menunggu Spare Part, Sudah Diperbaiki).
+    4. Tombol WhatsApp pengingat otomatis bagi Admin jika aduan belum selesai dalam 24 jam.
+--}}
+
 @extends('layouts.app')
 
 @section('content')

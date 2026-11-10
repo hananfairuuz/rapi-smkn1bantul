@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'constants.dart';
 
+/// Custom Exception untuk menangani pesan kegagalan dari API server.
 class ApiException implements Exception {
   const ApiException(this.message);
 
@@ -15,6 +16,10 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+/// Service Jaringan API (HTTP Client) untuk Aplikasi Mobile RAPI
+/// Menghubungkan aplikasi Flutter ke Backend Laravel:
+/// - Menggunakan HTTPS aman dan penyimpanan token terenkripsi (FlutterSecureStorage).
+/// - Menyediakan fungsi login, logout, get/post agenda, kelola pengaduan, dan upload bukti perbaikan (multipart).
 class ApiService {
   ApiService()
     : _baseUrl = const String.fromEnvironment(
@@ -219,6 +224,7 @@ class ApiService {
   Future<Map<String, dynamic>> getEventReceipt(int id) =>
       _request('GET', '/events/$id/receipt');
 
+  /// Membuat laporan pengaduan fasilitas baru + unggah foto kerusakan
   Future<Map<String, dynamic>> createComplaint(
     Map<String, String> fields, {
     String? photoPath,
@@ -227,6 +233,7 @@ class ApiService {
       ..headers.addAll(_headers())
       ..fields.addAll(fields);
     if (photoPath != null) {
+      // Lampirkan file foto kerusakan (multipart/form-data)
       request.files.add(await http.MultipartFile.fromPath('photo', photoPath));
     }
     final streamedResponse = await _send(request.send);
@@ -234,6 +241,7 @@ class ApiService {
     return _decode(response);
   }
 
+  /// Verifikasi persetujuan laporan pengaduan oleh PIC (approved / rejected)
   Future<Map<String, dynamic>> reviewComplaint(int id, String approvalStatus) =>
       _request(
         'PATCH',
@@ -241,6 +249,10 @@ class ApiService {
         body: {'approval_status': approvalStatus},
       );
 
+  /// Memperbarui status perbaikan pengaduan oleh PIC:
+  /// - status: 'Belum Diperbaiki' / 'Menunggu Spare Part' / 'Sudah Diperbaiki'
+  /// - notes: catatan PIC (opsional)
+  /// - repairPhotoPath: file foto bukti selesai diperbaiki (wajib jika status 'Sudah Diperbaiki')
   Future<Map<String, dynamic>> updateComplaintRepair(
     int id,
     String status,
@@ -255,6 +267,7 @@ class ApiService {
       request.fields['repair_notes'] = notes.trim();
     }
     if (repairPhotoPath != null) {
+      // Lampirkan file foto bukti selesai diperbaiki
       request.files.add(
         await http.MultipartFile.fromPath('repair_photo', repairPhotoPath),
       );
@@ -264,17 +277,22 @@ class ApiService {
     return _decode(response);
   }
 
+  /// Mengambil daftar notifikasi sistem in-app
   Future<Map<String, dynamic>> getNotifications() =>
       _request('GET', '/notifications');
 
+  /// Menandai semua notifikasi sudah dibaca
   Future<void> markAllNotificationsRead() =>
       _request('POST', '/notifications/read-all');
 
+  /// Menandai 1 notifikasi tertentu sudah dibaca
   Future<void> markNotificationRead(int id) =>
       _request('PATCH', '/notifications/$id/read');
 
+  /// URI untuk memuat foto bukti kerusakan awal
   Uri complaintPhotoUri(int id) => _uri('/complaints/$id/photo');
 
+  /// URI untuk memuat foto bukti barang selesai diperbaiki oleh PIC
   Uri complaintRepairPhotoUri(int id) => _uri('/complaints/$id/repair-photo');
 
   Map<String, String> get requestHeaders => _headers();

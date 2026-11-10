@@ -4,6 +4,11 @@ import '../api_service.dart';
 import '../constants.dart';
 import '../widgets/common_widgets.dart';
 
+/// Halaman Reset Kata Sandi (Lupa Password) Aplikasi Mobile
+/// Alur kerja (3 langkah aman):
+/// 1. Masukkan email terdaftar -> Kirim kode verifikasi 6 digit (OTP) ke email.
+/// 2. Masukkan kode OTP 6 digit -> Server memverifikasi keaslian dan batas waktu (10 menit).
+/// 3. Masukkan password baru & konfirmasi password baru -> Password berhasil diperbarui.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({
     required this.api,
@@ -136,8 +141,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF071224).withOpacity(0.42),
-                    const Color(0xFF071224).withOpacity(0.58),
+                    const Color(0xFF071224).withOpacity(0.25),
+                    const Color(0xFF071224).withOpacity(0.38),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,

@@ -11,13 +11,27 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
+/**
+ * Controller Reset Sandi Web (Lupa Password via Kode OTP Email)
+ *
+ * Alur keamanan 3 tahap:
+ * 1. Form permintaan reset -> generate 6 digit OTP acak, disimpan dalam bentuk hash, dan dikirim via email SMTP.
+ * 2. Form verifikasi OTP -> mencocokkan input kode user dengan hash (maksimal 5 percobaan, batas 10 menit).
+ * 3. Form ganti kata sandi -> mengupdate password baru pengguna di database.
+ */
 class PasswordResetController extends Controller
 {
+    /**
+     * Menampilkan form input email untuk permintaan kode OTP reset password.
+     */
     public function create()
     {
         return view('auth.forgot-password');
     }
 
+    /**
+     * Memproses pengiriman kode verifikasi 6 digit ke alamat email pengguna.
+     */
     public function sendCode(Request $request)
     {
         $request->session()->forget('password_reset_verified_email');
@@ -56,6 +70,9 @@ class PasswordResetController extends Controller
             ->with('success', 'Server email menerima permintaan pengiriman kode OTP. Jika belum terlihat, periksa folder Spam atau Promosi. Kode berlaku selama 10 menit.');
     }
 
+    /**
+     * Menampilkan halaman verifikasi OTP dan form input kata sandi baru.
+     */
     public function showReset(Request $request)
     {
         $email = strtolower(trim((string) $request->query('email', '')));
@@ -74,6 +91,9 @@ class PasswordResetController extends Controller
         return response()->view('auth.reset-password', ['email' => $email, 'verified' => $verified]);
     }
 
+    /**
+     * Memverifikasi kode OTP 6 digit yang dimasukkan pengguna.
+     */
     public function verifyCode(Request $request)
     {
         $data = $request->validate([
@@ -112,6 +132,9 @@ class PasswordResetController extends Controller
             ->with('success', 'Email berhasil diverifikasi. Silakan buat kata sandi baru.');
     }
 
+    /**
+     * Menyimpan kata sandi baru ke database setelah verifikasi OTP berhasil.
+     */
     public function reset(Request $request)
     {
         $email = strtolower(trim($request->validate([

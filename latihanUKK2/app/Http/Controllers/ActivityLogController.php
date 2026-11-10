@@ -5,8 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
+/**
+ * Controller Log Aktivitas Sistem (Audit Trail)
+ *
+ * Khusus Admin: Memantau jejak audit semua aktivitas pengguna (tambah ruangan, edit jadwal, verifikasi, dsb).
+ */
 class ActivityLogController extends Controller
 {
+    /**
+     * Menampilkan riwayat log aktivitas beserta pencarian & paginasi 25 baris per halaman.
+     */
     public function index(Request $request)
     {
         abort_unless(auth()->user()->role?->name === 'admin', 403);

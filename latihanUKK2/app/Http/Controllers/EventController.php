@@ -12,8 +12,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Controller untuk mengelola seluruh alur Peminjaman Ruangan & Agenda:
+ * 1. Pengecekan ketersediaan ruangan realtime (mencegah bentrok jadwal)
+ * 2. Pengajuan agenda oleh Guru / Organisasi
+ * 3. Persetujuan oleh PIC Ruangan / Admin Sarpras
+ * 4. Cetak Surat Izin Resmi Peminjaman Ruangan (PDF) ber-QR Code
+ * 5. Serah terima pengembalian ruangan (Check-Out)
+ */
 class EventController extends Controller
 {
+    /**
+     * Menampilkan daftar riwayat dan permohonan agenda peminjaman
+     */
     public function index(Request $request)
     {
         $this->canViewIndex();
@@ -547,6 +558,9 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         return $hours * 60 + $minutes;
     }
 
+    /**
+     * Mengambil agenda lain pada ruangan yang sama yang berpotensi tumpang tindih
+     */
     private function eventsOverlappingRange(int|string $roomId, string $startDate, string $endDate, ?int $ignore = null)
     {
         $previousDate = CarbonImmutable::parse($startDate)->subDay()->toDateString();
@@ -557,13 +571,18 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
                 $query->whereDate('date', '>=', $previousDate)
                     ->orWhereDate('end_date', '>=', $startDate);
             })
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'approved']) // Hanya agenda aktif yang memblokir jadwal
             ->when($ignore, fn ($query, $id) => $query->whereKeyNot($id))
             ->orderBy('date')
             ->orderBy('start_time')
             ->get(['date', 'end_date', 'start_time', 'end_time', 'title']);
     }
 
+    /**
+     * ALGORITMA PENDETEKSI TABRAKAN JADWAL (Collision Detection)
+     * Dua agenda dikatakan bertabrakan jika dan hanya jika:
+     * (Jam Mulai A < Jam Selesai B) DAN (Jam Selesai A > Jam Mulai B)
+     */
     private function hasCollision($events, string $startDate, string $endDate, array $interval): bool
     {
         $bookingStart = CarbonImmutable::parse($startDate.' '.$interval['start_time'], 'Asia/Jakarta')->getTimestamp() / 60;
@@ -584,6 +603,7 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
             )->getTimestamp() / 60;
             $eventEnd = $event->endAt()->getTimestamp() / 60;
 
+            // Rumus Overlap: StartA < EndB && EndA > StartB
             return $eventStart < $bookingEnd && $eventEnd > $bookingStart;
         });
     }

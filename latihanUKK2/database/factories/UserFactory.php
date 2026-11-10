@@ -8,17 +8,22 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
+ * Pabrik Data Palsu Pengguna (User Factory)
+ *
+ * Fungsi: Menghasilkan data pengguna tiruan secara otomatis untuk keperluan testing unit (Unit Test)
+ * dan pengisian database simulasi tanpa perlu mengetik satu per satu.
+ *
  * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * Kata sandi default hash yang digunakan oleh data tiruan.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Definisi atribut bawaan setiap pengguna palsu.
      *
      * @return array<string, mixed>
      */
@@ -34,7 +39,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * State khusus: Pengguna yang belum memverifikasi email.
      */
     public function unverified(): static
     {

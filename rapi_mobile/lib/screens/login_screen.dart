@@ -4,6 +4,12 @@ import '../api_service.dart';
 import '../constants.dart';
 import '../widgets/common_widgets.dart';
 
+/// Halaman Masuk (Login) Aplikasi Mobile RAPI-Sekolah
+/// Fitur utama:
+/// 1. Tampilan profesional berlatar belakang foto gedung sekolah SMK N 1 Bantul (HD).
+/// 2. Autentikasi akun Guru, PIC Ruang, dan Organisasi Siswa melalui API RESTful.
+/// 3. Navigasi menuju fitur 'Lupa Kata Sandi' (reset password via OTP email).
+/// 4. Validasi form realtime (email harus format valid, password tidak boleh kosong).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
     required this.api,
@@ -95,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF071224).withOpacity(0.42),
-                    const Color(0xFF071224).withOpacity(0.58),
+                    const Color(0xFF071224).withOpacity(0.25),
+                    const Color(0xFF071224).withOpacity(0.38),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,

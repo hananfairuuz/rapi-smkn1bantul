@@ -13,13 +13,32 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
 
+/**
+ * Controller Autentikasi Masuk Web (Login & Google OAuth)
+ *
+ * Menangani:
+ * 1. Login standar (Email & Password) dengan opsi "Ingat Saya" (Remember Me).
+ * 2. Login otomatis via Akun Google (Single Sign-On / OAuth 2.0).
+ * 3. Pendaftaran mandiri akun Guru / Organisasi Siswa melalui Google.
+ * 4. Logout dan regenerasi session token untuk mencegah serangan Session Fixation.
+ */
 class LoginController extends Controller
 {
+    /**
+     * Menampilkan form halaman login web.
+     */
     public function showLogin()
     {
         return view('auth.login');
     }
 
+    /**
+     * Memproses autentikasi email & password:
+     * - Validasi format email & password tidak boleh kosong.
+     * - Verifikasi kecocokan data dengan Auth::attempt.
+     * - Memastikan user sudah memiliki Role sebelum boleh masuk sistem.
+     * - Regenerasi session ID untuk keamanan.
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -44,6 +63,9 @@ class LoginController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Menampilkan form pendaftaran bagi pengguna baru yang login menggunakan Akun Google.
+     */
     public function showGoogleRegistration(Request $request)
     {
         $pending = $request->session()->get('pending_google_registration');
@@ -52,6 +74,9 @@ class LoginController extends Controller
         return view('auth.register', ['googleUser' => $pending]);
     }
 
+    /**
+     * Menyimpan data pendaftaran pengguna baru via Google (nama, WhatsApp, peran Guru/Organisasi).
+     */
     public function completeGoogleRegistration(Request $request)
     {
         $pending = $request->session()->get('pending_google_registration');
@@ -82,6 +107,9 @@ class LoginController extends Controller
         return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil. Anda masuk menggunakan akun Google.');
     }
 
+    /**
+     * Mengarahkan pengguna ke halaman persetujuan login Google (Google OAuth Consent Screen).
+     */
     public function redirectToGoogle(Request $request)
     {
         if (blank(config('services.google.client_id')) || blank(config('services.google.client_secret'))) {
@@ -105,6 +133,13 @@ class LoginController extends Controller
         return redirect()->away('https://accounts.google.com/o/oauth2/v2/auth?'.$query);
     }
 
+    /**
+     * Menerima kiriman token balik dari Google (OAuth Callback):
+     * - Memvalidasi token state (anti-CSRF).
+     * - Menukar auth code menjadi access token ke server Google.
+     * - Mengambil data profil (email, nama, sub).
+     * - Otomatis menghubungkan akun dan login ke dashboard.
+     */
     public function handleGoogleCallback(Request $request)
     {
         $expectedState = $request->session()->pull('google_oauth_state');
@@ -190,6 +225,9 @@ class LoginController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Logout Pengguna: Mengakhiri session login, menghapus data sesi, dan generate token CSRF baru.
+     */
     public function logout(Request $request)
     {
         Auth::logout();

@@ -994,6 +994,11 @@ class _ComplaintFormState extends State<ComplaintForm> {
   }
 }
 
+/// Dialog bagi PIC Ruangan untuk memperbarui status perbaikan barang/fasilitas.
+/// Fitur unggulan:
+/// - Memilih status: Belum Diperbaiki, Menunggu Spare Part, atau Sudah Diperbaiki.
+/// - Wajib mengunggah foto bukti perbaikan bila status diubah menjadi "Sudah Diperbaiki".
+/// - Mengompresi kualitas foto otomatis ke 70% dan memvalidasi ukuran file maks 10 MB.
 class RepairUpdateDialog extends StatefulWidget {
   const RepairUpdateDialog({
     this.initialStatus = 'Belum Diperbaiki',
@@ -1031,6 +1036,8 @@ class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
     super.dispose();
   }
 
+  /// Mengambil foto bukti perbaikan dari Kamera langsung atau Galeri HP.
+  /// Otomatis dikompresi ke kualitas 70% dan dicek agar tidak melebihi 10 MB.
   Future<void> _pickPhoto(ImageSource source) async {
     try {
       final image = await _picker.pickImage(source: source, imageQuality: 70);
@@ -1052,6 +1059,8 @@ class _RepairUpdateDialogState extends State<RepairUpdateDialog> {
     }
   }
 
+  /// Validasi sebelum menyimpan status:
+  /// Jika status 'Sudah Diperbaiki', foto bukti fisik WAJIB ada!
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     if (_status == 'Sudah Diperbaiki' &&

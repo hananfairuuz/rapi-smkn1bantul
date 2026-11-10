@@ -26,10 +26,10 @@
             <div class="guide-step-number">01</div>
             <h3 class="guide-step-title">Unduh Berkas APK</h3>
             <p class="guide-step-desc">
-                Klik tombol <strong>"Download APK Android"</strong> di website ini. Berkas <code class="inline-code">rapi-mobile.apk</code> (versi 1.0.0 rilis resmi) akan langsung diunduh ke ponsel Anda.
+                Klik tombol <strong>"Download APK Android"</strong> di website ini. Berkas <code class="inline-code">rapi-mobile.apk</code> (versi {{ $mobileAppVersion }} rilis resmi) akan langsung diunduh ke ponsel Anda.
             </p>
             <div class="guide-step-footer">
-                <span class="step-footer-tag">Ukuran: ±45 MB (v1.0.0)</span>
+                <span class="step-footer-tag">Ukuran: {{ $mobileAppSize }} (v{{ $mobileAppVersion }})</span>
             </div>
         </div>
 
@@ -83,7 +83,7 @@
             <div>
                 <a href="{{ route('download.apk') }}" class="btn-guide-download">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                    Download APK Android (v1.0.0)
+                    Download APK Android (v{{ $mobileAppVersion }})
                 </a>
             </div>
         </div>

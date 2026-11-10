@@ -6,8 +6,16 @@ use App\Models\SystemNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Controller Notifikasi Sistem (In-App Notifications)
+ *
+ * Mengelola tanda baca lonceng notifikasi (tandai satu dibaca, tandai semua dibaca, dan klik buka link aduan/agenda).
+ */
 class NotificationController extends Controller
 {
+    /**
+     * Menandai satu notifikasi tertentu sebagai telah dibaca.
+     */
     public function markAsRead(Request $request, SystemNotification $notification): RedirectResponse
     {
         abort_unless($notification->user_id === auth()->id(), 403);

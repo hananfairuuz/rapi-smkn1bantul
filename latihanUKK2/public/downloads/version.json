@@ -1,0 +1,8 @@
+{
+    "version": "1.0.3",
+    "build_number": 4,
+    "app_name": "RAPI-Sekolah",
+    "updated_at": "2026-11-10",
+    "notes": "Pembaruan kalender mobile selaras dengan web Laravel (Senin awal pekan dan libur akhir pekan merah)."
+}
+

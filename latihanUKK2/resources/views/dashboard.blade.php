@@ -1,9 +1,19 @@
+{{--
+    Halaman Dashboard Utama Aplikasi RAPI-Sekolah
+    Menampilkan:
+    1. Salam selamat datang & tanggal aktif hari ini (bahasa Indonesia).
+    2. Notifikasi sistem (peringatan pengaduan, status jadwal, dll).
+    3. Tiga kartu metrik ringkasan (Total Ruangan, Agenda Hari Ini, Aduan Pending).
+    4. Panel Agenda Terkini (daftar jadwal terdekat beserta statusnya).
+    5. Panel Aksi Cepat yang otomatis menyesuaikan dengan peran user (Admin / PIC / Guru / Organisasi).
+--}}
 
 @extends('layouts.app')
 
 @section('content')
 
     <div class="dashboard-watermark">
+    {{-- Header Halaman: Menampilkan nama pengguna yang login dan tanggal hari ini --}}
     <div class="page-heading">
         <div>
             <h1>Selamat datang, {{ auth()->user()->name }}!</h1>
@@ -13,6 +23,7 @@
         <span class="date-label">{{ now()->locale('id')->translatedFormat('l, d F Y') }}</span>
     </div>
 
+    {{-- Daftar Notifikasi Sistem yang belum dibaca oleh user --}}
     @foreach($notifications as $notification)
         <div class="alert notice">
             <strong>{{ $notification->title }}</strong>
@@ -21,8 +32,10 @@
         </div>
     @endforeach
 
+    {{-- Kartu Statistik (Stat Grid): Menampilkan metrik data penting sekolah --}}
     <section class="stat-grid">
 
+        {{-- Kartu 1: Total Ruangan dan rasio ruangan tersedia vs terpakai --}}
         <article class="stat-card">
             <p>Total Ruangan</p>
             <strong>{{ $totalRooms }}</strong>
@@ -31,12 +44,14 @@
             </small>
         </article>
 
+        {{-- Kartu 2: Jumlah agenda pemakaian ruangan hari ini & yang sedang berlangsung detik ini --}}
         <article class="stat-card">
             <p>Agenda Hari Ini</p>
             <strong>{{ $todayEvents }}</strong>
             <small>{{ $ongoingEvents }} sedang berlangsung</small>
         </article>
 
+        {{-- Kartu 3: Pengaduan fasilitas rusak yang belum diperbaiki (tugas PIC) --}}
         <article class="stat-card">
             <p>Aduan Pending</p>
             <strong class="danger-text">{{ $pendingComplaints }}</strong>
@@ -45,8 +60,10 @@
 
     </section>
 
+    {{-- Grid Konten Utama: Terbagi menjadi Agenda Terkini dan Menu Aksi Cepat --}}
     <section class="dashboard-grid">
 
+        {{-- Panel Kiri: 5 Agenda Terkini yang disetujui / pending --}}
         <article class="panel">
 
             <div class="panel-header">
@@ -57,14 +74,15 @@
             <div class="agenda-list">
 
                 @forelse($recentEvents as $event)
-
                     <div class="agenda-row">
 
+                        {{-- Nama Kegiatan, Ruangan, dan Nama Peminjam --}}
                         <div>
                             <strong>{{ $event->title }}</strong>
                             <small>{{ $event->room->name }} · {{ $event->user->name }}</small>
                         </div>
 
+                        {{-- Tanggal dan Rentang Jam Pelaksanaan --}}
                         <div>
                             <strong>{{ $event->date->format('d M') }}@if($event->isMultiDay())–{{ $event->end_date->format('d M') }}@endif</strong>
                             <small>
@@ -72,6 +90,7 @@
                             </small>
                         </div>
 
+                        {{-- Badge Status Agenda: Disetujui (hijau), Menunggu (kuning), Ditolak (merah) --}}
                         <span class="badge {{ $event->status }}">
                             {{ $event->status === 'approved' ? 'Disetujui' : ($event->status === 'pending' ? 'Menunggu' : 'Ditolak') }}
                         </span>
@@ -88,6 +107,7 @@
 
         </article>
 
+        {{-- Panel Kanan: Menu Aksi Cepat berdasarkan hak akses (Role-Based Access Control) --}}
         <aside class="panel">
 
             <div class="panel-header">
@@ -96,6 +116,7 @@
 
             <div class="quick-links">
 
+                {{-- Akses untuk Admin, Guru, dan Organisasi: Boleh mengajukan pinjam ruangan --}}
                 @if(in_array(auth()->user()->role?->name, ['admin', 'guru', 'organisasi']))
                     <a href="{{ route('events.create') }}">
                         <span>
@@ -108,6 +129,7 @@
                     </a>
                 @endif
 
+                {{-- Akses Khusus Guru & Siswa/Organisasi: Lapor sarpras rusak & cek riwayat sendiri --}}
                 @if(in_array(auth()->user()->role?->name, ['guru', 'organisasi']))
                     <a href="{{ route('complaints.create') }}">
                         <span>
@@ -138,6 +160,7 @@
                     </a>
                 @endif
 
+                {{-- Akses Khusus PIC Ruangan: Menangani pengaduan, cek ruangan binaan, & rekap barang rusak --}}
                 @if(auth()->user()->role?->name === 'pic')
                     <a href="{{ route('complaints.index') }}">
                         <span>
@@ -168,6 +191,7 @@
                     </a>
                 @endif
 
+                {{-- Akses Khusus Admin: Menambah ruangan, persetujuan agenda, pantau komplain, kelola user, dan rekap sarpras --}}
                 @if(auth()->user()->role?->name === 'admin')
                     <a href="{{ route('rooms.create') }}">
                         <span>

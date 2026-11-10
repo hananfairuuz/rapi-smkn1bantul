@@ -6,6 +6,20 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Peminjaman Ruangan & Jadwal Agenda (Tabel 'events')
+ *
+ * Kolom penting:
+ * - user_id           : ID peminjam (akun guru/organisasi).
+ * - room_id           : ID ruangan yang dipinjam.
+ * - title             : Nama kegiatan/acara.
+ * - date / end_date   : Tanggal mulai dan tanggal selesai (mendukung agenda multi-hari).
+ * - start_time/end_time: Jam pelaksanaan (dipakai untuk rumus bentrok).
+ * - status            : 'pending' (menunggu), 'approved' (disetujui), 'rejected' (ditolak).
+ * - returned_at       : Waktu nyata serah terima check-out ruangan.
+ * - checkout_condition: Kondisi ruangan saat dikembalikan ('aman' atau 'rusak').
+ * - checkout_notes    : Catatan inventaris saat serah terima pengembalian.
+ */
 class Event extends Model
 {
     use HasFactory;

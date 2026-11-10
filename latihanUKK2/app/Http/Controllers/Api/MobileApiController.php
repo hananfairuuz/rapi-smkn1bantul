@@ -25,8 +25,24 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
+/**
+ * Controller RESTful API Mobile (Flutter)
+ *
+ * Menangani seluruh interaksi aplikasi mobile:
+ * 1. Autentikasi Pengguna (Login via Bearer Token, Logout, Lupa Sandi via Kode OTP Email).
+ * 2. Profil Pengguna & Pembaruan Nomor WhatsApp.
+ * 3. Agenda Ruangan & Kalender Sekolah (Cek libur nasional & tabrakan jadwal).
+ * 4. Pengaduan Sarpras & Pelaporan Kerusakan.
+ * 5. Update Status Bukti Perbaikan PIC dengan upload foto multipart (kompresi 70% & maks 10 MB).
+ */
 class MobileApiController extends Controller
 {
+    /**
+     * Endpoint Login Mobile:
+     * - Memvalidasi email dan password.
+     * - Memastikan akun memiliki role dan bukan Admin (karena Admin khusus web desktop).
+     * - Menghasilkan token acak 80 karakter berumur 30 hari yang disimpan dalam bentuk hash SHA-256.
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -59,6 +75,9 @@ class MobileApiController extends Controller
         ]);
     }
 
+    /**
+     * Endpoint Logout Mobile: Menghapus token autentikasi dari tabel api_tokens.
+     */
     public function logout(Request $request)
     {
         ApiToken::where('token', hash('sha256', $request->bearerToken()))->delete();
@@ -66,6 +85,9 @@ class MobileApiController extends Controller
         return response()->json(['message' => 'Berhasil keluar.']);
     }
 
+    /**
+     * Endpoint Profil Pengguna Aktif: Mengembalikan informasi pengguna yang sedang login.
+     */
     public function user(Request $request)
     {
         if ($request->user()->role?->name === 'admin') {
@@ -75,6 +97,9 @@ class MobileApiController extends Controller
         return response()->json(['user' => $this->userData($request->user()->loadMissing('role'))]);
     }
 
+    /**
+     * Endpoint Ubah Profil: Mengubah nama, email, dan nomor WhatsApp.
+     */
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -95,6 +120,10 @@ class MobileApiController extends Controller
         return response()->json(['message' => 'Profil berhasil diperbarui.', 'user' => $this->userData($user->loadMissing('role'))]);
     }
 
+    /**
+     * Endpoint Kirim Kode Reset Sandi (OTP):
+     * Menghasilkan kode 6 digit acak yang berlaku 10 menit dan mengirimkannya ke email user.
+     */
     public function sendPasswordResetCode(Request $request)
     {
         $data = $request->validate(['email' => ['required', 'email', 'max:255']]);
@@ -725,6 +754,9 @@ class MobileApiController extends Controller
         ]);
     }
 
+    /**
+     * API: Menampilkan daftar pengaduan fasilitas (khusus akun pembuat atau PIC ruangan terkait)
+     */
     public function complaints(Request $request)
     {
         $user = $request->user();
@@ -739,6 +771,9 @@ class MobileApiController extends Controller
         return response()->json(['complaints' => $query->orderByDesc('created_at')->get()]);
     }
 
+    /**
+     * API: Mengalirkan file foto bukti kerusakan awal ke mobile
+     */
     public function complaintPhoto(Request $request, Complaint $complaint)
     {
         $this->authorizeComplaintAccess($request, $complaint);
@@ -747,6 +782,9 @@ class MobileApiController extends Controller
         return Storage::disk('public')->response($complaint->photo_path);
     }
 
+    /**
+     * API: Mengalirkan file foto bukti barang yang sudah selesai diperbaiki ke mobile
+     */
     public function complaintRepairPhoto(Request $request, Complaint $complaint)
     {
         $this->authorizeComplaintAccess($request, $complaint);
@@ -755,6 +793,9 @@ class MobileApiController extends Controller
         return Storage::disk('public')->response($complaint->repair_photo_path);
     }
 
+    /**
+     * API: Persetujuan awal pengaduan oleh PIC (approved / rejected)
+     */
     public function reviewComplaint(Request $request, Complaint $complaint)
     {
         $this->authorizePicComplaint($request, $complaint);
@@ -768,6 +809,11 @@ class MobileApiController extends Controller
         ]);
     }
 
+    /**
+     * API: Pembaruan status perbaikan fasilitas oleh PIC via Mobile
+     * - Wajib upload foto bukti perbaikan (maks 10MB) jika status 'Sudah Diperbaiki'
+     * - Catatan perbaikan bersifat opsional
+     */
     public function updateComplaintRepair(Request $request, Complaint $complaint)
     {
         $this->authorizePicComplaint($request, $complaint);
@@ -779,10 +825,11 @@ class MobileApiController extends Controller
                 Rule::requiredIf(fn () => $request->status_repair === 'Sudah Diperbaiki' && ! $complaint->repair_photo_path),
                 'nullable',
                 'image',
-                'max:10240',
+                'max:10240', // Batas 10 MB
             ],
         ]);
 
+        // Simpan & kompres foto bukti perbaikan baru jika dilampirkan
         if ($request->hasFile('repair_photo')) {
             if ($complaint->repair_photo_path && Storage::disk('public')->exists($complaint->repair_photo_path)) {
                 Storage::disk('public')->delete($complaint->repair_photo_path);

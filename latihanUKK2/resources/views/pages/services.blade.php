@@ -83,7 +83,7 @@
 
             <div class="role-card-footer">
                 <a href="{{ route('guide') }}" class="role-action-btn action-green">
-                    Unduh File APK Android (v1.0.0) →
+                    Unduh File APK Android (v{{ $mobileAppVersion }}) →
                 </a>
             </div>
         </div>

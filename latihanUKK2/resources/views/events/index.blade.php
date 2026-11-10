@@ -1,3 +1,11 @@
+{{--
+    Halaman Manajemen Agenda & Peminjaman Ruangan
+    Fitur:
+    1. Filter multi-kategori (Semua, Mendatang, Terkini, Hari Ini, Terlaksana, Pending, Ditolak).
+    2. Deteksi tabrakan waktu otomatis (status pending & approved ikut diperiksa).
+    3. Persetujuan admin & tombol integrasi WhatsApp ke peminjam.
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Jadwal Ruangan · RAPI-Sekolah')

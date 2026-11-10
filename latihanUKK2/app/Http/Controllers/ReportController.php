@@ -10,8 +10,19 @@ use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 use ZipArchive;
 
+/**
+ * Controller Laporan (Rekap Peminjaman & Rekap Kerusakan Fasilitas)
+ *
+ * Fungsi utama controller ini:
+ * 1. Admin: Rekap jadwal peminjaman ruangan (Web, Cetak Word .docx, & Excel .xls).
+ * 2. PIC: Rekap fasilitas rusak di ruangannya (Web, Word .docx, Excel .xls, & Mobile API).
+ * 3. Menghasilkan file Word (.docx) murni via ZipArchive XML tanpa library berbayar/pihak ketiga.
+ */
 class ReportController extends Controller
 {
+    /**
+     * Tampilan Web: Halaman Laporan Rekap Peminjaman Ruangan (Khusus Admin).
+     */
     public function index(Request $request): Response
     {
         $this->ensureAdmin();
@@ -20,6 +31,9 @@ class ReportController extends Controller
         return response()->view('reports.index', $report);
     }
 
+    /**
+     * Ekspor DOCX: Mengunduh Laporan Rekap Peminjaman Ruangan format Word (.docx).
+     */
     public function docx(Request $request): Response
     {
         $this->ensureAdmin();
@@ -29,6 +43,9 @@ class ReportController extends Controller
         return $this->downloadDocx($report, $filename, fn (string $path, array $data) => $this->writeDocx($path, $data));
     }
 
+    /**
+     * Ekspor EXCEL: Mengunduh Laporan Rekap Peminjaman Ruangan format Excel (.xls).
+     */
     public function excel(Request $request): Response
     {
         $this->ensureAdmin();
@@ -46,6 +63,9 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Tampilan Web: Halaman Laporan Barang/Fasilitas Rusak (Khusus PIC Ruangan).
+     */
     public function damagedGoods(Request $request): Response
     {
         $this->ensurePic();
@@ -54,6 +74,9 @@ class ReportController extends Controller
         return response()->view('reports.damaged-goods', $report);
     }
 
+    /**
+     * Ekspor DOCX: Mengunduh Laporan Barang Rusak format Word (.docx) untuk PIC.
+     */
     public function damagedGoodsDocx(Request $request): Response
     {
         $this->ensurePic();
@@ -63,6 +86,9 @@ class ReportController extends Controller
         return $this->downloadDocx($report, $filename, fn (string $path, array $data) => $this->writeDamagedGoodsDocx($path, $data));
     }
 
+    /**
+     * Ekspor EXCEL: Mengunduh Laporan Barang Rusak format Excel (.xls) untuk PIC.
+     */
     public function damagedGoodsExcel(Request $request): Response
     {
         $this->ensurePic();
@@ -80,6 +106,9 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Endpoint API Mobile: PIC mengunduh file DOCX laporan barang rusak dari aplikasi Flutter.
+     */
     public function damagedGoodsDocxForApi(Request $request): Response
     {
         $user = $request->user();
@@ -90,6 +119,10 @@ class ReportController extends Controller
         return $this->downloadDocx($report, $filename, fn (string $path, array $data) => $this->writeDamagedGoodsDocx($path, $data));
     }
 
+    /**
+     * Helper: Menangani streaming download file DOCX dari file temporary di sistem.
+     * Setelah terkirim ke user, file sementara langsung dihapus otomatis agar hemat disk.
+     */
     private function downloadDocx(array $report, string $filename, callable $writer): Response
     {
         return response()->streamDownload(function () use ($report, $writer): void {
@@ -111,6 +144,10 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Mengambil dan menyusun data rekap peminjaman ruangan (Event)
+     * berdasarkan periode yang dipilih oleh Admin.
+     */
     private function monthlyReport(Request $request): array
     {
         $period = $this->reportPeriod($request);
@@ -122,6 +159,7 @@ class ReportController extends Controller
             'period' => $period['period'],
             'startDate' => $period['startDate'],
             'endDate' => $period['endDate'],
+            // Ambil daftar event di rentang tanggal, urutkan berdasarkan tanggal & jam mulai
             'events' => Event::with(['room', 'user'])
                 ->whereDate('date', '>=', $period['startDate']->toDateString())
                 ->whereDate('date', '<', $period['endDate']->toDateString())
@@ -131,6 +169,10 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Mengambil dan menyusun data rekap kerusakan barang/fasilitas (Complaint)
+     * khusus untuk ruangan-ruangan yang ditugaskan kepada PIC bersangkutan.
+     */
     private function monthlyDamagedGoodsReport(Request $request, ?int $picId = null): array
     {
         $period = $this->reportPeriod($request);
@@ -142,6 +184,7 @@ class ReportController extends Controller
             'period' => $period['period'],
             'startDate' => $period['startDate'],
             'endDate' => $period['endDate'],
+            // Filter hanya pengaduan dari ruangan yang dipimpin oleh PIC ini
             'complaints' => Complaint::with(['room', 'reporter'])
                 ->whereHas('room', fn ($query) => $query->where('pic_id', $picId ?? auth()->id()))
                 ->where('created_at', '>=', $period['startUtc'])
@@ -151,6 +194,13 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Menghitung tanggal awal dan akhir (filter periode)
+     * Mendukung 3 mode:
+     * - 'day'  : Laporan harian
+     * - 'week' : Laporan mingguan (Senin sampai Minggu)
+     * - 'month': Laporan bulanan (tanggal 1 sampai akhir bulan)
+     */
     private function reportPeriod(Request $request): array
     {
         $data = $request->validate([
@@ -164,11 +214,13 @@ class ReportController extends Controller
         $type = $data['period_type'] ?? 'month';
         if ($type === 'day' || $type === 'week') {
             $selectedDate = Carbon::parse($data['date'] ?? now('Asia/Jakarta')->toDateString(), 'Asia/Jakarta');
+            // Jika mingguan, mulai dari hari Senin
             $startDate = $type === 'week'
                 ? $selectedDate->copy()->startOfWeek(Carbon::MONDAY)
                 : $selectedDate->copy()->startOfDay();
             $endDate = $startDate->copy()->addDays($type === 'week' ? 7 : 1);
         } else {
+            // Default: mode bulanan
             if (! empty($data['selected_month'])) {
                 [$year, $month] = array_map('intval', explode('-', $data['selected_month']));
             } else {
@@ -180,6 +232,7 @@ class ReportController extends Controller
         }
         $month = $startDate->month;
         $year = $startDate->year;
+        // Format label periode untuk kop surat / judul laporan
         $period = match ($type) {
             'day' => $startDate->locale('id')->translatedFormat('l, d F Y'),
             'week' => $startDate->format('d/m/Y').' – '.$endDate->copy()->subDay()->format('d/m/Y'),
@@ -198,6 +251,9 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Membentuk nama berkas download (contoh: laporan-rapi-2026-11.docx)
+     */
     private function reportFilename(string $prefix, array $report): string
     {
         $datePart = $report['period_type'] === 'month'
@@ -207,16 +263,26 @@ class ReportController extends Controller
         return $prefix.'-'.$datePart.'.docx';
     }
 
+    /**
+     * Penjaga Akses: Pastikan hanya user dengan role 'admin' yang bisa mengakses.
+     */
     private function ensureAdmin(): void
     {
         abort_unless(auth()->user()->role?->name === 'admin', 403);
     }
 
+    /**
+     * Penjaga Akses: Pastikan hanya user dengan role 'pic' yang bisa mengakses.
+     */
     private function ensurePic(): void
     {
         abort_unless(auth()->user()->role?->name === 'pic', 403);
     }
 
+    /**
+     * Generator Word (.docx) Barang Rusak:
+     * Menyusun arsip ZIP berisi XML standar OpenXML Office.
+     */
     private function writeDamagedGoodsDocx(string $path, array $report): void
     {
         $archive = new ZipArchive;
@@ -224,6 +290,7 @@ class ReportController extends Controller
             throw new \RuntimeException('Tidak dapat membuat berkas laporan DOCX.');
         }
 
+        // Struktur dokumen Word (.docx) adalah arsip ZIP yang membungkus file XML OpenXML standar
         $files = [
             '[Content_Types].xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -249,6 +316,9 @@ class ReportController extends Controller
     }
 
     /**
+     * Membangun format XML OpenXML untuk Laporan Barang Rusak.
+     * Mengatur layout landscape A4, judul, tabel ringkasan, dan tabel daftar pengaduan kerusakan.
+     *
      * @param  array{period: string, complaints: Collection}  $report
      */
     private function damagedGoodsDocumentXml(array $report): string
@@ -283,6 +353,9 @@ class ReportController extends Controller
     }
 
     /**
+     * Generator Word (.docx) Peminjaman Ruangan:
+     * Menyusun arsip ZIP berisi XML dokumen rekap jadwal.
+     *
      * @param  array{period: string, events: Collection}  $report
      */
     private function writeDocx(string $path, array $report): void
@@ -317,6 +390,9 @@ class ReportController extends Controller
     }
 
     /**
+     * Membangun format XML OpenXML untuk Laporan Rekap Jadwal Peminjaman Ruangan.
+     * Menampilkan kop laporan, ringkasan jumlah, dan tabel seluruh jadwal kegiatan.
+     *
      * @param  array{period: string, events: Collection}  $report
      */
     private function documentXml(array $report): string
@@ -351,6 +427,10 @@ class ReportController extends Controller
         return $xml;
     }
 
+    /**
+     * Helper XML: Menghasilkan satu paragraf teks Word (<w:p>).
+     * Opsi $bold = true membuat teks tebal (<w:b/>).
+     */
     private function paragraph(string $text, bool $bold = false): string
     {
         $runProperties = $bold ? '<w:rPr><w:b/></w:rPr>' : '';
@@ -359,6 +439,8 @@ class ReportController extends Controller
     }
 
     /**
+     * Helper XML: Menghasilkan tabel Word (<w:tbl>) lengkap dengan border abu-abu rapi.
+     *
      * @param  array<int, array<int, string>>  $rows
      */
     private function tableXml(array $rows): string
@@ -383,6 +465,9 @@ class ReportController extends Controller
         return $xml.'</w:tbl>';
     }
 
+    /**
+     * Helper XML: Mengamankan karakter khusus (seperti <, >, &, ", ') agar dokumen XML valid.
+     */
     private function escapeXml(string $text): string
     {
         return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');

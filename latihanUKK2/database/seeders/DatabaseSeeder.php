@@ -9,15 +9,24 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Seeder Data Awal Sistem (Database Seeder)
+ *
+ * Fungsi: Mengisi data permulaan yang dibutuhkan aplikasi saat baru pertama kali dipasang (deploy):
+ * 1. Empat peran pengguna utama (admin, pic, guru, organisasi).
+ * 2. Akun default untuk pengujian & demo penguji UKK (password: password123).
+ * 3. Ruangan master awal ('Laboratorium Komputer') yang sudah ditetapkan PIC-nya.
+ */
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Jalankan proses pengisian data awal (seeding).
      */
     public function run(): void
     {
+        // 1. Buat master data peran (Role)
         $roles = collect([
             'admin' => 'Waka / Admin yang mengelola seluruh sistem.',
             'pic' => 'PIC Ruang yang bertanggung jawab atas fasilitas.',
@@ -25,6 +34,7 @@ class DatabaseSeeder extends Seeder
             'organisasi' => 'Organisasi siswa yang dapat mengajukan agenda dan melaporkan kerusakan.',
         ])->map(fn ($description, $name) => Role::firstOrCreate(['name' => $name], ['description' => $description]));
 
+        // 2. Buat akun-akun pengguna untuk setiap peran (beserta no WhatsApp & role_id)
         $users = [
             'admin' => ['Admin RAPI', 'admin@rapi.test', '628111111111'],
             'pic' => ['PIC Ruang', 'pic@rapi.test', '628222222222'],
@@ -45,6 +55,15 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
-        Room::firstOrCreate(['name' => 'Laboratorium Komputer'], ['location' => 'Gedung A Lt. 2', 'description' => 'Ruang praktik komputer', 'pic_id' => User::where('email', 'pic@rapi.test')->value('id')]);
+
+        // 3. Buat ruangan percontohan yang sudah dihubungkan ke akun PIC Ruang
+        Room::firstOrCreate(
+            ['name' => 'Laboratorium Komputer'],
+            [
+                'location' => 'Gedung A Lt. 2',
+                'description' => 'Ruang praktik komputer',
+                'pic_id' => User::where('email', 'pic@rapi.test')->value('id'),
+            ]
+        );
     }
 }

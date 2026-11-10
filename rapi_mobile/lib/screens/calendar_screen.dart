@@ -145,9 +145,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           }
         }
 
-        // Kalender mengikuti standar Indonesia: dimulai dari Minggu (Min) hingga Sabtu (Sab)
-        // DateTime weekday: Senin=1 .. Minggu=7. Dengan rumus `weekday % 7`, Minggu menjadi indeks 0.
-        final firstOffset = DateTime(_month.year, _month.month, 1).weekday % 7;
+        // Kalender mengikuti standar kalender web Laravel: dimulai dari hari Senin (Sen) hingga Minggu (Min)
+        // DateTime weekday: Senin=1 .. Minggu=7. Dengan rumus `weekday - 1`, Senin menjadi indeks 0.
+        final firstOffset = DateTime(_month.year, _month.month, 1).weekday - 1;
         final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
         final selectedEvents = _selectedDate == null
             ? <dynamic>[]
@@ -336,17 +336,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                           const SizedBox(height: 6),
 
-                          // Header Hari (Min, Sen, Sel, Rab, Kam, Jum, Sab)
-                          // Min (Minggu) berwarna merah
+                          // Header Hari: Sen, Sel, Rab, Kam, Jum, Sab, Min
+                          // Sab (Sabtu) dan Min (Minggu) berwarna merah seperti pada web Laravel
                           Row(
                             children: [
                               for (var i = 0; i < 7; i++)
                                 Expanded(
                                   child: Center(
                                     child: Text(
-                                      const ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][i],
+                                      const ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][i],
                                       style: TextStyle(
-                                        color: i == 0 ? dangerText : muted,
+                                        color: (i == 5 || i == 6) ? dangerText : muted,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -387,8 +387,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 holidays,
                               );
                               final isHoliday = holidayName != null;
-                              final isSunday = HolidayData.isSunday(dateValue);
-                              final isRed = isHoliday || isSunday;
+                              final isWeekend = HolidayData.isWeekend(dateValue);
+                              final isRed = isHoliday || isWeekend;
 
                               final selected =
                                   _selectedDate != null &&
@@ -413,7 +413,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      // Nomor Tanggal (Merah untuk Minggu dan Hari Libur Nasional)
+                                      // Nomor Tanggal (Merah untuk Sabtu, Minggu, dan Hari Libur Nasional)
                                       Text(
                                         '$dateNum',
                                         style: TextStyle(

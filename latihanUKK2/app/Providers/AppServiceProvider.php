@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\MobileReleaseService;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Bagikan informasi rilis aplikasi mobile secara otomatis ke semua tampilan Blade
+        View::composer('*', function ($view) {
+            $view->with([
+                'mobileAppVersion' => MobileReleaseService::version(),
+                'mobileAppSize'    => MobileReleaseService::fileSize(),
+            ]);
+        });
     }
 }

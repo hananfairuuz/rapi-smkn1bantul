@@ -153,6 +153,10 @@ class HolidayData {
   /// Cek apakah tanggal adalah hari Minggu
   static bool isSunday(DateTime date) => date.weekday == DateTime.sunday;
 
+  /// Cek apakah tanggal adalah hari libur akhir pekan (Sabtu atau Minggu)
+  static bool isWeekend(DateTime date) =>
+      date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+
   /// Cek apakah tanggal tertentu adalah hari libur nasional
   static String? getHolidayName(DateTime date, Map<String, String> holidays) {
     final key =
@@ -160,9 +164,9 @@ class HolidayData {
     return holidays[key];
   }
 
-  /// Cek apakah tanggal harus berwarna merah (Hari Minggu atau Hari Libur Nasional)
+  /// Cek apakah tanggal harus berwarna merah (Akhir Pekan: Sabtu/Minggu atau Hari Libur Nasional)
   static bool isRedDate(DateTime date, Map<String, String> holidays) {
-    return isSunday(date) || getHolidayName(date, holidays) != null;
+    return isWeekend(date) || getHolidayName(date, holidays) != null;
   }
 
   /// Mempersingkat nama hari libur untuk ditampilkan di dalam kotak kalender
