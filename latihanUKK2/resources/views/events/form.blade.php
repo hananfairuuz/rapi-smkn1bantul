@@ -919,9 +919,8 @@
                 const opt = roomField.options[roomField.selectedIndex];
                 return opt && opt.value ? [opt.textContent.trim()] : [];
             }
-            return Array.from(roomCheckboxes)
-                .filter(chk => chk.checked)
-                .map(chk => chk.dataset.name || 'Ruangan');
+            return Array.from(document.querySelectorAll('.room-chk-input:checked'))
+                .map(chk => chk.getAttribute('data-name') || chk.dataset.name || 'Ruangan');
         }
 
         function formatTanggalLabel() {
@@ -940,12 +939,16 @@
 
             const selected = getSelectedRoomIds();
             if (selected.length === 0) {
-                await window.rapiDialog.alert({
-                    title: 'Ruangan Belum Dipilih',
-                    message: 'Silakan pilih minimal satu ruangan yang akan dipinjam terlebih dahulu.',
-                    variant: 'warning',
-                    confirmText: 'Mengerti',
-                });
+                if (window.rapiDialog) {
+                    await window.rapiDialog.alert({
+                        title: 'Ruangan Belum Dipilih',
+                        message: 'Silakan pilih minimal satu ruangan yang akan dipinjam terlebih dahulu.',
+                        variant: 'warning',
+                        confirmText: 'Mengerti',
+                    });
+                } else {
+                    alert('Silakan pilih minimal satu ruangan yang akan dipinjam terlebih dahulu.');
+                }
                 return;
             }
 
@@ -960,19 +963,21 @@
                     ? 'Yakin ingin menyimpan perubahan agenda peminjaman ruangan ini?'
                     : 'Yakin ingin mengajukan peminjaman ruangan ini?');
 
-            const agreed = await window.rapiDialog.confirm({
-                title: isEditMode ? 'Simpan Perubahan Agenda?' : 'Konfirmasi Peminjaman Ruangan',
-                message: confirmMsg,
-                variant: 'accent',
-                summary: [
-                    { label: 'Judul Agenda', value: titleInput },
-                    { label: 'Peminjam', value: borrowerInput },
-                    { label: 'Ruangan (' + selected.length + ')', value: selectedNames.join(', ') },
-                    { label: 'Tanggal', value: formatTanggalLabel() },
-                ],
-                confirmText: isEditMode ? 'Ya, Simpan' : 'Ya, Ajukan Sekarang',
-                cancelText: 'Periksa Kembali',
-            });
+            const agreed = window.rapiDialog
+                ? await window.rapiDialog.confirm({
+                    title: isEditMode ? 'Simpan Perubahan Agenda?' : 'Konfirmasi Peminjaman Ruangan',
+                    message: confirmMsg,
+                    variant: 'accent',
+                    summary: [
+                        { label: 'Judul Agenda', value: titleInput },
+                        { label: 'Peminjam', value: borrowerInput },
+                        { label: 'Ruangan (' + selected.length + ')', value: selectedNames.join(', ') },
+                        { label: 'Tanggal', value: formatTanggalLabel() },
+                    ],
+                    confirmText: isEditMode ? 'Ya, Simpan' : 'Ya, Ajukan Sekarang',
+                    cancelText: 'Periksa Kembali',
+                })
+                : window.confirm(confirmMsg);
 
             if (agreed) {
                 isBookingConfirmed = true;
