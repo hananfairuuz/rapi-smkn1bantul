@@ -251,7 +251,33 @@ class _RoomsScreenState extends State<RoomsScreen> {
     );
   }
 
-  Future<void> _confirmDelete(int id, String name) async {
+  Future<void> _confirmDelete(int id, String name, {bool hasActiveBookings = false, int activeCount = 0}) async {
+    if (hasActiveBookings) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.lock_outline, color: danger),
+              SizedBox(width: 8),
+              Expanded(child: Text('Ruangan Tidak Dapat Dihapus')),
+            ],
+          ),
+          content: Text(
+            'Ruangan "$name" saat ini sedang dipakai atau masih dalam pembokingan ($activeCount agenda aktif).\n\nJika ingin menghapus ruangan ini, harus ada pergantian ruangan terlebih dahulu untuk yang meminjam ruangan tersebut (dapat dipindahkan lewat menu Kelola Agenda / Web Admin).',
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -287,7 +313,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Gagal menghapus: $e'),
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
               backgroundColor: danger,
             ),
           );
@@ -440,6 +466,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final description = room['description']?.toString();
     final pic = room['pic'] != null ? asMap(room['pic'])['name']?.toString() : null;
     final isInUse = room['is_in_use'] == true;
+    final hasActiveBookings = room['has_active_bookings'] == true;
+    final activeBookingsCount = (room['active_bookings_count'] as num?)?.toInt() ?? 0;
     final currentEvent = room['current_event'] != null ? asMap(room['current_event']) : null;
 
     return Padding(
@@ -610,6 +638,32 @@ class _RoomsScreenState extends State<RoomsScreen> {
                     ],
                   ),
                 ),
+              if (hasActiveBookings) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.lock_outline, color: Color(0xFFB45309), size: 13),
+                      const SizedBox(width: 5),
+                      Text(
+                        '$activeBookingsCount Pembokingan Aktif (Terkunci dari hapus)',
+                        style: const TextStyle(
+                          color: Color(0xFF92400E),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (description != null && description.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -642,12 +696,20 @@ class _RoomsScreenState extends State<RoomsScreen> {
                     ),
                     const SizedBox(width: 4),
                     TextButton.icon(
-                      onPressed: () => _confirmDelete(id, name),
-                      icon: const Icon(Icons.delete_outline, size: 16),
-                      label: const Text('Hapus'),
+                      onPressed: () => _confirmDelete(
+                        id,
+                        name,
+                        hasActiveBookings: hasActiveBookings,
+                        activeCount: activeBookingsCount,
+                      ),
+                      icon: Icon(
+                        hasActiveBookings ? Icons.lock_outline : Icons.delete_outline,
+                        size: 16,
+                      ),
+                      label: Text(hasActiveBookings ? 'Terkunci' : 'Hapus'),
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        foregroundColor: danger,
+                        foregroundColor: hasActiveBookings ? const Color(0xFFB45309) : danger,
                       ),
                     ),
                   ],

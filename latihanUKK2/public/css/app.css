@@ -1512,3 +1512,242 @@ button.notif-check-btn:hover,
     color: var(--muted);
     font-size: 12.5px;
 }
+
+/* ========================================================
+   CUSTOM CONFIRMATION & ALERT MODAL (RAPI DIALOG)
+   ======================================================== */
+.rapi-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(24, 22, 18, 0.54);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.rapi-modal-backdrop.is-open {
+    display: flex;
+    animation: rapiFadeIn 0.18s ease-out;
+}
+
+@keyframes rapiFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes rapiModalPop {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.rapi-modal-card {
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 24px 48px -12px rgba(24, 22, 18, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    animation: rapiModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--ink);
+}
+
+.rapi-modal-card--wide {
+    max-width: 560px;
+}
+
+.rapi-modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.rapi-modal-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rapi-modal-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.rapi-modal-icon--accent {
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    border: 1px solid #e7d4bd;
+}
+
+.rapi-modal-icon--warning {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.rapi-modal-icon--danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.rapi-modal-title-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.rapi-modal-title {
+    margin: 0 0 4px;
+    font-size: 17.5px;
+    font-weight: 800;
+    line-height: 1.3;
+    color: var(--ink);
+}
+
+.rapi-modal-subtitle {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #57534e;
+}
+
+.rapi-modal-close {
+    all: unset;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rapi-modal-close:hover {
+    background: #f1ede4;
+    color: var(--ink);
+}
+
+.rapi-modal-summary {
+    background: #f8f6f0;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 13px 15px;
+    margin: 14px 0;
+    display: grid;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.rapi-modal-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.rapi-modal-summary-label {
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.rapi-modal-summary-value {
+    color: var(--ink);
+    font-weight: 700;
+    text-align: right;
+    word-break: break-word;
+}
+
+.rapi-modal-notice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 12px 0;
+}
+
+.rapi-modal-notice--warning {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+}
+
+.rapi-modal-notice--danger {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.rapi-booking-list {
+    display: grid;
+    gap: 8px;
+    max-height: 185px;
+    overflow-y: auto;
+    margin: 10px 0 14px;
+    padding-right: 2px;
+}
+
+.rapi-booking-item {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 3.5px solid var(--danger);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+}
+
+.rapi-booking-item strong {
+    display: block;
+    color: var(--ink);
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.rapi-booking-item span {
+    color: #57534e;
+    display: block;
+    font-size: 12px;
+}
+
+.rapi-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+}
+
+.rapi-modal-actions .btn,
+.rapi-modal-actions button {
+    min-width: 104px;
+    padding: 10px 16px;
+    border-radius: 9px;
+    font-size: 13.5px;
+}

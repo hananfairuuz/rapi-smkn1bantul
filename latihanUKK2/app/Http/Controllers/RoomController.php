@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Controller Manajemen Data Ruangan (Fasilitas Sekolah)
@@ -51,27 +52,39 @@ class RoomController extends Controller
 
         $rooms = $query->orderBy('name')->get();
 
-        // Cek status pemakaian realtime: apakah detik ini ada jadwal yang disetujui sedang berlangsung
+        // Cek status pemakaian realtime & seluruh agenda dalam pembokingan aktif
         $now = CarbonImmutable::now('Asia/Jakarta');
         $today = $now->toDateString();
 
-        $activeEvents = Event::with('user')
-            ->where('status', 'approved')
-            ->whereDate('date', '<=', $today)
-            ->where(function ($q) use ($today) {
-                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+        $relevantEvents = Event::with('user:id,name')
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereNull('deleted_by_creator_at')
+            ->whereNull('returned_at')
+            ->where(function ($q) use ($today, $now) {
+                $q->whereDate('date', '>=', $now->subDay()->toDateString())
+                    ->orWhereDate('end_date', '>=', $today);
             })
-            ->get()
-            ->filter(fn (Event $ev) => $now->betweenIncluded($ev->startAt(), $ev->endAt()));
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
 
-        // Petakan event aktif per room_id
-        $activeByRoom = $activeEvents->keyBy('room_id');
+        // Petakan event aktif yang sedang berlangsung detik ini per room_id
+        $activeByRoom = $relevantEvents
+            ->filter(fn (Event $ev) => $ev->status === 'approved' && $now->betweenIncluded($ev->startAt(), $ev->endAt()))
+            ->keyBy('room_id');
 
-        // Tandai setiap ruangan apakah sedang terpakai (is_in_use = true/false)
-        $rooms = $rooms->map(function ($room) use ($activeByRoom) {
+        // Petakan seluruh agenda yang masih dalam pembokingan (sedang dipakai atau akan datang)
+        $bookingsByRoom = Room::filterActiveBookings($relevantEvents, $now)->groupBy('room_id');
+
+        // Tandai setiap ruangan status realtime dan daftar peminjaman aktifnya
+        $rooms = $rooms->map(function ($room) use ($activeByRoom, $bookingsByRoom) {
             $currentEvent = $activeByRoom->get($room->id);
+            $roomBookings = $bookingsByRoom->get($room->id, collect())->values();
             $room->is_in_use = $currentEvent !== null;
             $room->current_event = $currentEvent;
+            $room->active_bookings = $roomBookings;
+            $room->active_bookings_count = $roomBookings->count();
+            $room->has_active_bookings = $roomBookings->isNotEmpty();
 
             return $room;
         });
@@ -85,6 +98,7 @@ class RoomController extends Controller
 
         return view('rooms.index', [
             'rooms' => $rooms,
+            'allRooms' => Room::orderBy('name')->get(['id', 'name', 'location', 'capacity']),
             'search' => $search,
             'statusFilter' => $statusFilter,
             'canManage' => auth()->user()->role?->name === 'admin',
@@ -137,10 +151,53 @@ class RoomController extends Controller
 
     /**
      * Menghapus data ruangan dari database (Khusus Admin).
+     * Ruangan yang sedang dipakai atau masih memiliki pembokingan aktif tidak dapat langsung dihapus
+     * sebelum dilakukan pergantian ruangan untuk peminjamnya.
      */
-    public function destroy(Room $room)
+    public function destroy(Request $request, Room $room)
     {
         $this->canManageRooms();
+
+        $activeBookings = $room->activeBookings();
+        if ($activeBookings->isNotEmpty()) {
+            $replacementId = $request->input('replacement_room_id');
+            if (! $replacementId) {
+                return redirect()->route('rooms.index')->withErrors([
+                    'room_delete' => "Ruangan '{$room->name}' tidak dapat dihapus karena sedang dipakai atau masih dalam pembokingan ({$activeBookings->count()} agenda aktif). Jika ingin menghapus ruangan, harus ada pergantian ruangan terlebih dahulu untuk yang meminjam ruangan tersebut.",
+                ]);
+            }
+
+            $data = $request->validate([
+                'replacement_room_id' => ['required', 'integer', 'exists:rooms,id', Rule::notIn([$room->id])],
+                'move_reason' => ['required', 'string', 'max:500'],
+            ], [
+                'replacement_room_id.required' => 'Pilih ruangan pengganti untuk memindahkan peminjam ruangan ini.',
+                'replacement_room_id.not_in' => 'Ruangan pengganti tidak boleh sama dengan ruangan yang akan dihapus.',
+                'move_reason.required' => 'Alasan pergantian ruangan wajib diisi.',
+            ]);
+
+            $replacementRoom = Room::findOrFail($data['replacement_room_id']);
+            try {
+                $movedCount = $room->moveActiveBookingsTo($replacementRoom, trim($data['move_reason']));
+            } catch (\RuntimeException $e) {
+                return redirect()->route('rooms.index')->withErrors([
+                    'room_delete' => $e->getMessage(),
+                ]);
+            }
+
+            $name = $room->name;
+            $room->delete();
+            ActivityLog::record(
+                'Hapus & Ganti Ruangan',
+                auth()->user()->name . " memindahkan {$movedCount} peminjaman dari '{$name}' ke '{$replacementRoom->name}' (Alasan: {$data['move_reason']}) lalu menghapus '{$name}'."
+            );
+
+            return redirect()->route('rooms.index')->with(
+                'success',
+                "Sebanyak {$movedCount} peminjaman telah dipindahkan ke '{$replacementRoom->name}' (notifikasi dikirim ke peminjam) dan ruangan '{$name}' berhasil dihapus."
+            );
+        }
+
         $name = $room->name;
         $room->delete();
         ActivityLog::record('Hapus Ruangan', auth()->user()->name . " menghapus ruangan '{$name}'.");

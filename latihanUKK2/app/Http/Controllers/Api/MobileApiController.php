@@ -346,20 +346,30 @@ class MobileApiController extends Controller
 
         $now = CarbonImmutable::now('Asia/Jakarta');
         $today = $now->toDateString();
-        $activeEvents = Event::with('user:id,name')
-            ->where('status', 'approved')
-            ->whereDate('date', '<=', $today)
-            ->where(function ($q) use ($today) {
-                $q->whereNull('end_date')->orWhereDate('end_date', '>=', $today);
+        $relevantEvents = Event::with('user:id,name')
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereNull('deleted_by_creator_at')
+            ->whereNull('returned_at')
+            ->where(function ($q) use ($today, $now) {
+                $q->whereDate('date', '>=', $now->subDay()->toDateString())
+                    ->orWhereDate('end_date', '>=', $today);
             })
-            ->get()
-            ->filter(fn (Event $ev) => $now->betweenIncluded($ev->startAt(), $ev->endAt()));
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
 
-        $activeByRoom = $activeEvents->keyBy('room_id');
+        $activeByRoom = $relevantEvents
+            ->filter(fn (Event $ev) => $ev->status === 'approved' && $now->betweenIncluded($ev->startAt(), $ev->endAt()))
+            ->keyBy('room_id');
 
-        $rooms->each(function (Room $room) use ($activeByRoom) {
+        $bookingsByRoom = Room::filterActiveBookings($relevantEvents, $now)->groupBy('room_id');
+
+        $rooms->each(function (Room $room) use ($activeByRoom, $bookingsByRoom) {
             $current = $activeByRoom->get($room->id);
+            $roomBookings = $bookingsByRoom->get($room->id, collect());
             $room->setAttribute('is_in_use', $current !== null);
+            $room->setAttribute('has_active_bookings', $roomBookings->isNotEmpty());
+            $room->setAttribute('active_bookings_count', $roomBookings->count());
             if ($current) {
                 $room->setAttribute('current_event', [
                     'id' => $current->id,
@@ -435,7 +445,47 @@ class MobileApiController extends Controller
         $user = $request->user();
         abort_unless($user->role->name === 'admin', 403);
 
+        $activeBookings = $room->activeBookings();
+        if ($activeBookings->isNotEmpty()) {
+            $replacementId = $request->input('replacement_room_id');
+            if (! $replacementId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Ruangan '{$room->name}' tidak dapat dihapus karena sedang dipakai atau masih dalam pembokingan ({$activeBookings->count()} agenda aktif). Harus ada pergantian ruangan terlebih dahulu untuk yang meminjam ruangan tersebut.",
+                ], 422);
+            }
+
+            $data = $request->validate([
+                'replacement_room_id' => ['required', 'integer', 'exists:rooms,id', Rule::notIn([$room->id])],
+                'move_reason' => ['required', 'string', 'max:500'],
+            ]);
+
+            $replacementRoom = Room::findOrFail($data['replacement_room_id']);
+            try {
+                $movedCount = $room->moveActiveBookingsTo($replacementRoom, trim($data['move_reason']));
+            } catch (\RuntimeException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            $name = $room->name;
+            $room->delete();
+            ActivityLog::record(
+                'Hapus & Ganti Ruangan (Mobile)',
+                $user->name . " memindahkan {$movedCount} peminjaman dari '{$name}' ke '{$replacementRoom->name}' lalu menghapus '{$name}'."
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Peminjaman dipindahkan ke '{$replacementRoom->name}' dan ruangan '{$name}' berhasil dihapus.",
+            ]);
+        }
+
+        $name = $room->name;
         $room->delete();
+        ActivityLog::record('Hapus Ruangan (Mobile)', $user->name . " menghapus ruangan '{$name}'.");
 
         return response()->json([
             'status' => 'success',

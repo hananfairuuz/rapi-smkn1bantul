@@ -186,5 +186,132 @@
         });
     }
 </script>
+
+<!-- Modal Dialog Konfirmasi & Peringatan Kustom RAPI -->
+<div class="rapi-modal-backdrop" id="rapiGlobalDialog" role="dialog" aria-modal="true" aria-labelledby="rapiDialogTitle">
+    <div class="rapi-modal-card">
+        <div class="rapi-modal-header">
+            <div class="rapi-modal-icon rapi-modal-icon--accent" id="rapiDialogIcon"></div>
+            <div class="rapi-modal-title-wrap">
+                <h3 class="rapi-modal-title" id="rapiDialogTitle">Konfirmasi</h3>
+                <p class="rapi-modal-subtitle" id="rapiDialogMessage"></p>
+            </div>
+            <button type="button" class="rapi-modal-close" id="rapiDialogClose" aria-label="Tutup">&times;</button>
+        </div>
+        <div class="rapi-modal-summary" id="rapiDialogSummary" style="display: none;"></div>
+        <div class="rapi-modal-notice rapi-modal-notice--warning" id="rapiDialogNotice" style="display: none;"></div>
+        <div class="rapi-modal-actions">
+            <button type="button" class="btn secondary" id="rapiDialogCancel">Batal</button>
+            <button type="button" class="btn" id="rapiDialogConfirm">Ya, Lanjutkan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.rapiDialog = (() => {
+        const backdrop = document.getElementById('rapiGlobalDialog');
+        const iconEl = document.getElementById('rapiDialogIcon');
+        const titleEl = document.getElementById('rapiDialogTitle');
+        const msgEl = document.getElementById('rapiDialogMessage');
+        const summaryEl = document.getElementById('rapiDialogSummary');
+        const noticeEl = document.getElementById('rapiDialogNotice');
+        const cancelBtn = document.getElementById('rapiDialogCancel');
+        const confirmBtn = document.getElementById('rapiDialogConfirm');
+        const closeBtn = document.getElementById('rapiDialogClose');
+
+        const icons = {
+            accent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+        };
+
+        let resolver = null;
+
+        function close(result) {
+            backdrop.classList.remove('is-open');
+            if (resolver) {
+                const fn = resolver;
+                resolver = null;
+                fn(result);
+            }
+        }
+
+        function open(options = {}) {
+            const {
+                title = 'Konfirmasi',
+                message = '',
+                variant = 'accent',
+                summary = [],
+                notice = '',
+                confirmText = 'Ya, Lanjutkan',
+                cancelText = 'Batal',
+                showCancel = true,
+            } = options;
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            iconEl.className = 'rapi-modal-icon rapi-modal-icon--' + (icons[variant] ? variant : 'accent');
+            iconEl.innerHTML = icons[variant] || icons.accent;
+
+            summaryEl.innerHTML = '';
+            if (Array.isArray(summary) && summary.length > 0) {
+                summary.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'rapi-modal-summary-row';
+                    const lbl = document.createElement('span');
+                    lbl.className = 'rapi-modal-summary-label';
+                    lbl.textContent = item.label || '';
+                    const val = document.createElement('span');
+                    val.className = 'rapi-modal-summary-value';
+                    val.textContent = item.value || '-';
+                    row.appendChild(lbl);
+                    row.appendChild(val);
+                    summaryEl.appendChild(row);
+                });
+                summaryEl.style.display = 'grid';
+            } else {
+                summaryEl.style.display = 'none';
+            }
+
+            if (notice) {
+                noticeEl.className = 'rapi-modal-notice rapi-modal-notice--' + (variant === 'danger' ? 'danger' : 'warning');
+                noticeEl.textContent = notice;
+                noticeEl.style.display = 'flex';
+            } else {
+                noticeEl.style.display = 'none';
+            }
+
+            cancelBtn.textContent = cancelText;
+            cancelBtn.style.display = showCancel ? '' : 'none';
+            confirmBtn.textContent = confirmText;
+            confirmBtn.className = variant === 'danger' ? 'btn danger' : 'btn';
+
+            backdrop.classList.add('is-open');
+            setTimeout(() => confirmBtn.focus(), 30);
+
+            return new Promise(resolve => {
+                resolver = resolve;
+            });
+        }
+
+        cancelBtn.addEventListener('click', () => close(false));
+        closeBtn.addEventListener('click', () => close(false));
+        confirmBtn.addEventListener('click', () => close(true));
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) close(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && backdrop.classList.contains('is-open')) {
+                close(false);
+            }
+        });
+
+        return {
+            confirm: (opts) => open({ ...opts, showCancel: true }),
+            alert: (opts) => open({ ...opts, showCancel: false, confirmText: opts.confirmText || 'Mengerti' }),
+        };
+    })();
+</script>
 </body>
 </html>
