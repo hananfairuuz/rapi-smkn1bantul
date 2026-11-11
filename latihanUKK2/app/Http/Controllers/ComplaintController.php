@@ -119,6 +119,7 @@ class ComplaintController extends Controller
         $complaint = Complaint::create($data);
         $complaint->load('room');
         ActivityLog::record('Laporan Kerusakan', auth()->user()->name . " melaporkan fasilitas rusak '{$complaint->facility_name}' di ruangan {$complaint->room->name}.");
+        SystemNotification::notifyComplaintSubmitted($complaint, auth()->user());
 
         return redirect()->route('complaints.index')->with('success', 'Pengaduan kerusakan berhasil dicatat dan menunggu persetujuan PIC.');
     }
@@ -162,12 +163,8 @@ class ComplaintController extends Controller
         $complaint->update($data);
         $complaint->load('room');
 
-        // 4. Kirim notifikasi sistem otomatis ke akun pelapor (Guru/Siswa)
-        SystemNotification::create([
-            'user_id' => $complaint->reporter_id,
-            'title' => 'Update Perbaikan Fasilitas',
-            'message' => "Status perbaikan fasilitas '{$complaint->facility_name}' di {$complaint->room->name} diperbarui menjadi: {$complaint->status_repair}.",
-        ]);
+        // 4. Kirim notifikasi sistem otomatis ke akun pelapor & Admin
+        SystemNotification::notifyComplaintRepairUpdated($complaint, auth()->user());
 
         // 5. Catat jejak audit log
         ActivityLog::record('Tindak Lanjut Perbaikan', auth()->user()->name . " memperbarui status perbaikan '{$complaint->facility_name}' di {$complaint->room->name} menjadi '{$complaint->status_repair}'.");
@@ -187,12 +184,8 @@ class ComplaintController extends Controller
         $complaint->update(['approval_status' => $data['approval_status']]);
         $complaint->load('room');
 
-        // Kirim notifikasi status verifikasi ke pelapor
-        SystemNotification::create([
-            'user_id' => $complaint->reporter_id,
-            'title' => 'Status Verifikasi Pengaduan',
-            'message' => "Laporan kerusakan '{$complaint->facility_name}' di {$complaint->room->name} telah " . ($data['approval_status'] === 'approved' ? 'disetujui oleh PIC.' : 'ditolak oleh PIC.'),
-        ]);
+        // Kirim notifikasi status verifikasi ke pelapor & Admin
+        SystemNotification::notifyComplaintReviewed($complaint, auth()->user(), $data['approval_status']);
 
         ActivityLog::record('Verifikasi Kerusakan', auth()->user()->name . ($data['approval_status'] === 'approved' ? ' menyetujui ' : ' menolak ') . "laporan kerusakan '{$complaint->facility_name}' di {$complaint->room->name}.");
 

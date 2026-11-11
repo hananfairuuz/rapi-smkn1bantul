@@ -406,6 +406,7 @@ class MobileApiController extends Controller
         ]);
 
         $room = Room::create($data)->load('pic:id,name');
+        SystemNotification::notifyRoomPicAssigned($room, $user, null);
 
         return response()->json([
             'status' => 'success',
@@ -431,7 +432,9 @@ class MobileApiController extends Controller
             'capacity.min' => 'Kapasitas ruangan minimal 1 orang.',
         ]);
 
+        $previousPicId = $room->pic_id;
         $room->update($data);
+        SystemNotification::notifyRoomPicAssigned($room, $user, $previousPicId);
 
         return response()->json([
             'status' => 'success',
@@ -688,6 +691,8 @@ class MobileApiController extends Controller
                 ? 'Agenda berhasil dibuat dan langsung disetujui.'
                 : 'Agenda diajukan dan menunggu persetujuan.');
 
+        SystemNotification::notifyBookingSubmitted($createdEvents, $user, $isAdmin);
+
         return response()->json([
             'message' => $message,
             'event' => $createdEvents[0],
@@ -757,6 +762,7 @@ class MobileApiController extends Controller
             'Pengembalian Ruangan',
             $user->name . " mengonfirmasi pengembalian ruangan {$event->room?->name} untuk agenda '{$event->title}' via mobile (Kondisi: " . ($data['checkout_condition'] === 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih') . ")."
         );
+        SystemNotification::notifyEventCheckedOut($event, $user);
 
         return response()->json([
             'status' => 'success',
@@ -852,6 +858,7 @@ class MobileApiController extends Controller
         abort_unless($complaint->approval_status === 'pending', 403, 'Pengaduan ini sudah diputuskan.');
         $data = $request->validate(['approval_status' => ['required', Rule::in(['approved', 'rejected'])]]);
         $complaint->update(['approval_status' => $data['approval_status']]);
+        SystemNotification::notifyComplaintReviewed($complaint, $request->user(), $data['approval_status']);
 
         return response()->json([
             'message' => $data['approval_status'] === 'approved' ? 'Pengaduan disetujui.' : 'Pengaduan ditolak.',
@@ -889,6 +896,7 @@ class MobileApiController extends Controller
         unset($data['repair_photo']);
 
         $complaint->update($data);
+        SystemNotification::notifyComplaintRepairUpdated($complaint, $request->user());
 
         return response()->json([
             'message' => 'Status pengaduan diperbarui.',
@@ -959,6 +967,7 @@ class MobileApiController extends Controller
             'reporter_id' => $user->id,
             'approval_status' => 'pending',
         ])->load(['room:id,name', 'reporter:id,name']);
+        SystemNotification::notifyComplaintSubmitted($complaint, $user);
 
         return response()->json(['message' => 'Pengaduan kerusakan berhasil dicatat dan menunggu persetujuan PIC.', 'complaint' => $complaint], 201);
     }

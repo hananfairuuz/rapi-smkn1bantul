@@ -42,16 +42,31 @@ class NotificationController extends Controller
             $notification->update(['read_at' => now('Asia/Jakarta')]);
         }
 
-        if ($notification->event_id) {
-            return redirect()->route('events.index');
-        }
-
+        $role = auth()->user()->role?->name;
         $titleLower = strtolower($notification->title . ' ' . $notification->message);
-        if (str_contains($titleLower, 'fasilitas') || str_contains($titleLower, 'kerusakan') || str_contains($titleLower, 'pengaduan')) {
+
+        if (str_contains($titleLower, 'fasilitas')
+            || str_contains($titleLower, 'kerusakan')
+            || str_contains($titleLower, 'pengaduan')
+            || str_contains($titleLower, 'perbaikan')) {
             return redirect()->route('complaints.index');
         }
 
-        return redirect()->back();
+        if (str_contains($titleLower, 'penugasan pic') || str_contains($titleLower, 'pic ruangan')) {
+            return redirect()->route('rooms.index');
+        }
+
+        if ($notification->event_id
+            || str_contains($titleLower, 'agenda')
+            || str_contains($titleLower, 'peminjaman')
+            || str_contains($titleLower, 'jadwal')
+            || str_contains($titleLower, 'dikembalikan')) {
+            return in_array($role, ['admin', 'guru', 'organisasi'], true)
+                ? redirect()->route('events.index')
+                : redirect()->route('calendar');
+        }
+
+        return redirect()->route('dashboard');
     }
 }
 

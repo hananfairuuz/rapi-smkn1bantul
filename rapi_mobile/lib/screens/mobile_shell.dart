@@ -89,18 +89,33 @@ class _MobileShellState extends State<MobileShell> {
       await _markOneRead(id);
     }
 
-    if (notif['event_id'] != null) {
+    final text = '${notif['title']} ${notif['message']}'.toLowerCase();
+    if (text.contains('fasilitas') ||
+        text.contains('kerusakan') ||
+        text.contains('pengaduan') ||
+        text.contains('perbaikan')) {
+      _navigateToTab('Pengaduan');
+      return;
+    }
+
+    if (text.contains('penugasan pic') || text.contains('pic ruangan')) {
+      if (_canAccessRooms) {
+        _navigateToTab('Ruangan');
+      }
+      return;
+    }
+
+    if (notif['event_id'] != null ||
+        text.contains('agenda') ||
+        text.contains('peminjaman') ||
+        text.contains('jadwal') ||
+        text.contains('dikembalikan')) {
       if (_canManageEvents) {
         _navigateToTab('Agenda');
       } else {
         _navigateToTab('Kalender');
       }
       return;
-    }
-
-    final text = '${notif['title']} ${notif['message']}'.toLowerCase();
-    if (text.contains('fasilitas') || text.contains('kerusakan') || text.contains('pengaduan')) {
-      _navigateToTab('Pengaduan');
     }
   }
 

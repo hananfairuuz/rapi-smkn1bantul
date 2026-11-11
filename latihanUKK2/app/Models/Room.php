@@ -137,6 +137,7 @@ class Room extends Model
 
         return DB::transaction(function () use ($activeBookings, $replacementRoom, $moveReason) {
             $oldRoomName = $this->name;
+            $movedBorrowerIds = [];
 
             foreach ($activeBookings as $booking) {
                 $booking->update([
@@ -145,6 +146,7 @@ class Room extends Model
                 ]);
 
                 if ($booking->user_id) {
+                    $movedBorrowerIds[] = (int) $booking->user_id;
                     SystemNotification::create([
                         'user_id' => $booking->user_id,
                         'event_id' => $booking->id,
@@ -152,6 +154,18 @@ class Room extends Model
                         'message' => "Ruangan untuk agenda '{$booking->title}' dipindahkan dari {$oldRoomName} ke {$replacementRoom->name}. Alasan: {$moveReason}",
                     ]);
                 }
+            }
+
+            if ($replacementRoom->pic_id) {
+                $firstBooking = $activeBookings->first();
+                $count = $activeBookings->count();
+                SystemNotification::notifyUsers(
+                    [$replacementRoom->pic_id],
+                    'Agenda Dipindahkan ke Ruangan Anda',
+                    "{$count} agenda dari {$oldRoomName} dipindahkan ke {$replacementRoom->name}. Alasan: {$moveReason}",
+                    $firstBooking?->id,
+                    array_merge([auth()->id()], $movedBorrowerIds)
+                );
             }
 
             return $activeBookings->count();

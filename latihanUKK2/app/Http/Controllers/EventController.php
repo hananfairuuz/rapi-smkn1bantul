@@ -156,6 +156,7 @@ class EventController extends Controller
                 'Pengajuan Peminjaman',
                 auth()->user()->name . " mengajukan peminjaman ruangan {$firstEvent->room->name} untuk agenda '{$firstEvent->title}'."
             );
+            SystemNotification::notifyBookingSubmitted($createdEvents, auth()->user(), $isAdmin);
         }
 
         return redirect()->route('events.index')->with('success', $msg);
@@ -183,16 +184,17 @@ class EventController extends Controller
         abort_unless($event->status !== 'rejected', 403, 'Agenda yang ditolak tidak dapat diedit.');
         $data = $this->validated($request, true);
         $this->ensureNoCollision($data, $event->id);
+        $oldRoom = $event->room ?? Room::find($event->room_id);
         $oldRoomId = $event->room_id;
         if ($data['room_id'] != $oldRoomId && empty($data['move_reason'])) {
             return back()->withErrors(['move_reason' => 'Alasan pemindahan ruangan wajib diisi.'])->withInput();
-        } $event->update($data);
-        if ($data['room_id'] != $oldRoomId) {
-            $event->load('room');
-            SystemNotification::create(['user_id' => $event->user_id, 'event_id' => $event->id, 'title' => 'Ruangan agenda dipindahkan', 'message' => "Agenda {$event->title} dipindahkan ke {$event->room->name}. Alasan: {$data['move_reason']}"]);
+        }
+        $event->update($data);
+        if ($oldRoom) {
+            SystemNotification::notifyEventUpdated($event, $oldRoom, auth()->user(), $data['move_reason'] ?? null);
         }
 
-return redirect()->route('events.index')->with('success', 'Agenda berhasil diperbarui.'.($data['room_id'] != $oldRoomId ? ' Notifikasi telah dikirim ke peminjam.' : ''));
+        return redirect()->route('events.index')->with('success', 'Agenda berhasil diperbarui.'.($data['room_id'] != $oldRoomId ? ' Notifikasi telah dikirim ke peminjam & PIC ruangan.' : ''));
     }
 
     public function updateStatus(Request $request, Event $event): RedirectResponse
@@ -213,14 +215,7 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         ]);
 
         $event->load('room');
-        SystemNotification::create([
-            'user_id' => $event->user_id,
-            'event_id' => $event->id,
-            'title' => $data['status'] === 'approved' ? 'Agenda Disetujui' : 'Agenda Ditolak',
-            'message' => $data['status'] === 'approved'
-                ? "Pengajuan peminjaman ruangan '{$event->room->name}' untuk agenda '{$event->title}' telah disetujui."
-                : "Pengajuan peminjaman ruangan '{$event->room->name}' ditolak. Alasan: {$event->rejection_reason}",
-        ]);
+        SystemNotification::notifyEventStatusUpdated($event, auth()->user());
 
         ActivityLog::record(
             $data['status'] === 'approved' ? 'Persetujuan Agenda' : 'Penolakan Agenda',
@@ -277,6 +272,7 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
             'Pengembalian Ruangan',
             auth()->user()->name . " mengonfirmasi pengembalian ruangan {$event->room->name} untuk agenda '{$event->title}' (Kondisi: " . ($data['checkout_condition'] === 'rusak' ? 'Ada Kerusakan Dilaporkan' : 'Aman & Bersih') . ")."
         );
+        SystemNotification::notifyEventCheckedOut($event, auth()->user());
 
         if ($data['checkout_condition'] === 'rusak') {
             return redirect()->route('complaints.create', ['event_id' => $event->id])->with('success', 'Pengembalian dicatat. Silakan laporkan fasilitas/barang yang rusak pada formulir berikut.');
@@ -297,6 +293,10 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
         $event->load('room');
         $title = $event->title;
         $roomName = $event->room?->name ?? 'Ruangan';
+        $ownerId = (int) $event->user_id;
+        $picId = $event->room?->pic_id ? (int) $event->room->pic_id : null;
+        $wasRejected = $event->status === 'rejected';
+        $dateLabel = $event->date->format('d/m/Y') . ($event->isMultiDay() ? ' – ' . $event->end_date->format('d/m/Y') : '');
 
         if (! $isAdmin && $event->status === 'approved') {
             // Pembuat agenda (guru/organisasi) menghapus riwayat agendanya yang sudah terlaksana:
@@ -312,6 +312,15 @@ return redirect()->route('events.index')->with('success', 'Agenda berhasil diper
             ActivityLog::record(
                 'Hapus Agenda',
                 auth()->user()->name . " menghapus data agenda '{$title}' di {$roomName}."
+            );
+            SystemNotification::notifyEventDeleted(
+                $title,
+                $roomName,
+                $ownerId,
+                $picId,
+                $dateLabel,
+                auth()->user(),
+                $wasRejected
             );
         }
 

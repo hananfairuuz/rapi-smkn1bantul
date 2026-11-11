@@ -84,9 +84,11 @@
             <div style="display: flex; align-items: center; gap: 14px;">
                 @php
                     $allUserNotifications = auth()->check()
-                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->latest()->take(10)->get()
+                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->latest()->take(15)->get()
                         : collect();
-                    $unreadCount = $allUserNotifications->whereNull('read_at')->count();
+                    $unreadCount = auth()->check()
+                        ? \App\Models\SystemNotification::where('user_id', auth()->id())->whereNull('read_at')->count()
+                        : 0;
                 @endphp
                 <div class="notif-wrapper">
                     <button type="button" class="notif-bell-btn" id="notifBellBtn" aria-label="Notifikasi" title="Notifikasi ({{ $unreadCount }} baru)">

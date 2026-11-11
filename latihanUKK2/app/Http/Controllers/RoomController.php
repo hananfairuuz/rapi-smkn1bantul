@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\Room;
+use App\Models\SystemNotification;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -123,6 +124,7 @@ class RoomController extends Controller
         $this->canManageRooms();
         $room = Room::create($this->validated($request));
         ActivityLog::record('Tambah Ruangan', auth()->user()->name . " menambahkan ruangan baru '{$room->name}'.");
+        SystemNotification::notifyRoomPicAssigned($room, auth()->user(), null);
 
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil ditambahkan.');
     }
@@ -143,8 +145,10 @@ class RoomController extends Controller
     public function update(Request $request, Room $room)
     {
         $this->canManageRooms();
+        $previousPicId = $room->pic_id;
         $room->update($this->validated($request));
         ActivityLog::record('Edit Ruangan', auth()->user()->name . " memperbarui informasi ruangan '{$room->name}'.");
+        SystemNotification::notifyRoomPicAssigned($room, auth()->user(), $previousPicId);
 
         return redirect()->route('rooms.index')->with('success', 'Ruangan berhasil diperbarui.');
     }
