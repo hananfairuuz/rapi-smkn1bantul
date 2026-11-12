@@ -153,8 +153,7 @@
             const removePhotoButton = document.getElementById('remove-photo');
             const photoMessage = document.getElementById('photo-message');
             const photoRequired = {{ auth()->user()->role?->name !== 'admin' ? 'true' : 'false' }};
-            photoInput.required = photoRequired;
-            cameraPhotoInput.required = photoRequired;
+            // Validasi foto dilakukan via event submit agar input file hidden tidak memblokir browser secara diam-diam.
             let photoPreviewUrl = null;
             let cameraStream = null;
 
