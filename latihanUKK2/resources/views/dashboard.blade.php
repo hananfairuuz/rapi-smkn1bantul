@@ -24,13 +24,45 @@
     </div>
 
     {{-- Daftar Notifikasi Sistem yang belum dibaca oleh user --}}
-    @foreach($notifications as $notification)
-        <div class="alert notice">
-            <strong>{{ $notification->title }}</strong>
-            <br>
-            {{ $notification->message }}
+    @if($notifications->isNotEmpty())
+        <div class="dashboard-notif-box">
+            <div class="dashboard-notif-header">
+                <div class="dashboard-notif-title-wrap">
+                    <svg class="dashboard-notif-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    <strong>Pemberitahuan Sistem</strong>
+                    <span class="dashboard-notif-badge">{{ $notifications->count() }} baru</span>
+                </div>
+                <form method="post" action="{{ route('notifications.read-all') }}" style="margin: 0;">
+                    @csrf
+                    <button type="submit" class="notif-mark-all-btn">Tandai semua dibaca</button>
+                </form>
+            </div>
+            <div class="dashboard-notif-list">
+                @foreach($notifications->take(4) as $notification)
+                    <div class="dashboard-notif-item">
+                        <span class="dashboard-notif-dot"></span>
+                        <a href="{{ route('notifications.open', $notification) }}" class="dashboard-notif-body" title="Klik untuk membuka detail agenda/pengaduan">
+                            <span class="dashboard-notif-item-title">{{ $notification->title }}</span>
+                            <span class="dashboard-notif-item-msg">{{ $notification->message }}</span>
+                            <small class="dashboard-notif-time">{{ $notification->created_at->diffForHumans() }}</small>
+                        </a>
+                        <form method="post" action="{{ route('notifications.read', $notification) }}" style="margin: 0;">
+                            @csrf
+                            <button type="submit" class="notif-check-btn" title="Tandai dibaca">✓</button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+            @if($notifications->count() > 4)
+                <div class="dashboard-notif-footer">
+                    <span>+{{ $notifications->count() - 4 }} notifikasi lainnya. Buka menu lonceng di atas untuk melihat semuanya.</span>
+                </div>
+            @endif
         </div>
-    @endforeach
+    @endif
 
     {{-- Kartu Statistik (Stat Grid): Menampilkan metrik data penting sekolah --}}
     <section class="stat-grid">
