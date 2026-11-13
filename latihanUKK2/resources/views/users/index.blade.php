@@ -23,8 +23,7 @@
     </div>
 </form>
 
-@forelse($roleGroups as $group)
-    <section class="card user-group">
+@forelse($roleGroups as $group)    <section class="card user-group">
         <header class="user-group-header">
             <div>
                 <h2>{{ $group['label'] }}</h2>
@@ -46,10 +45,10 @@
                             <td>
                                 <div class="user-actions">
                                     <a class="btn warn" href="{{ route('users.edit', $user) }}">Ubah</a>
-                                    <form method="post" action="{{ route('users.destroy', $user) }}">
+                                    <form method="post" action="{{ route('users.destroy', $user) }}" class="js-delete-user-form" data-user-name="{{ $user->name }}">
                                         @csrf
                                         @method('delete')
-                                        <button class="danger" onclick="return confirm('Hapus akun ini? Akun yang masih memiliki data terkait tidak dapat dihapus.')">Hapus</button>
+                                        <button type="submit" class="danger">Hapus</button>
                                     </form>
                                 </div>
                             </td>
@@ -62,4 +61,26 @@
 @empty
     <div class="card empty-state">{{ $search !== '' ? 'Tidak ada pengguna yang cocok dengan pencarian.' : 'Belum ada pengguna.' }}</div>
 @endforelse
+
+<script>
+    document.querySelectorAll('.js-delete-user-form').forEach(form => {
+        let confirmed = false;
+        form.addEventListener('submit', async (e) => {
+            if (confirmed) return;
+            e.preventDefault();
+            const userName = form.dataset.userName || 'pengguna ini';
+            const ok = await window.rapiDialog.confirm({
+                title: 'Hapus Pengguna?',
+                message: `Apakah Anda yakin ingin menghapus akun "${userName}"? Akun yang masih memiliki data terkait tidak dapat dihapus.`,
+                variant: 'danger',
+                confirmText: 'Ya, Hapus',
+                cancelText: 'Batal',
+            });
+            if (ok) {
+                confirmed = true;
+                form.submit();
+            }
+        });
+    });
+</script>
 @endsection
