@@ -37,7 +37,7 @@ class UserController extends Controller
     {
         $this->admin();
         $search = trim((string) request('search', ''));
-        $users = User::with('role')
+        $users = User::with(['role', 'roomsAsPic'])
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
@@ -56,7 +56,10 @@ class UserController extends Controller
             'users' => $users->filter(fn ($user) => $user->role?->name === $role),
         ])->filter(fn ($group) => $group['users']->isNotEmpty());
 
-        return view('users.index', compact('roleGroups', 'search'));
+        // Daftar seluruh PIC aktif untuk dropdown pilihan PIC pengganti
+        $allPics = $users->filter(fn ($user) => $user->role?->name === 'pic')->values();
+
+        return view('users.index', compact('roleGroups', 'search', 'allPics'));
     }
 
     /**
@@ -283,19 +286,46 @@ class UserController extends Controller
     {
         $this->admin();
 
+        // 1. Tidak boleh menghapus akun sendiri
         if ($user->is(auth()->user())) {
             return back()->withErrors(['user' => 'Akun yang sedang digunakan tidak dapat dihapus.']);
         }
 
-        if ($user->role?->name === 'admin' && User::whereHas('role', fn ($query) => $query->where('name', 'admin'))->count() <= 1) {
+        // 2. Tidak boleh menghapus admin terakhir
+        if ($user->role?->name === 'admin' && User::whereHas('role', fn ($q) => $q->where('name', 'admin'))->count() <= 1) {
             return back()->withErrors(['user' => 'Admin terakhir tidak dapat dihapus.']);
         }
 
-        if ($user->events()->exists()
-            || $user->complaints()->exists()
-            || $user->roomsAsPic()->exists()
-            || $user->systemNotifications()->exists()) {
-            return back()->withErrors(['user' => 'Pengguna masih memiliki agenda, pengaduan, tugas PIC, atau notifikasi. Pindahkan atau selesaikan data tersebut sebelum menghapus akun.']);
+        // 3. Blokir jika user masih punya AGENDA aktif (pending / approved belum selesai)
+        $hasActiveEvents = $user->events()
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereNull('returned_at')
+            ->exists();
+        if ($hasActiveEvents) {
+            return back()->withErrors(['user' => 'Pengguna masih memiliki agenda peminjaman yang aktif atau menunggu persetujuan. Selesaikan atau tolak agenda tersebut terlebih dahulu.']);
+        }
+
+        // 4. Blokir jika user masih punya PENGADUAN yang belum selesai
+        //    (approval_status = pending → belum disetujui PIC, atau status_repair bukan 'Sudah Diperbaiki')
+        $hasOpenComplaints = $user->complaints()
+            ->where(function ($q) {
+                $q->where('approval_status', 'pending')
+                  ->orWhere('status_repair', '!=', 'Sudah Diperbaiki');
+            })->exists();
+        if ($hasOpenComplaints) {
+            return back()->withErrors(['user' => 'Pengguna masih memiliki pengaduan yang belum mendapat persetujuan PIC atau belum selesai diperbaiki.']);
+        }
+
+        // 5. Jika PIC punya ruangan, wajib ada replacement_pic_id dari form
+        $rooms = $user->roomsAsPic()->get();
+        if ($rooms->isNotEmpty()) {
+            $replacementId = request('replacement_pic_id');
+            $replacement = $replacementId ? User::whereHas('role', fn ($q) => $q->where('name', 'pic'))->find($replacementId) : null;
+            if (!$replacement || $replacement->id === $user->id) {
+                return back()->withErrors(['user' => 'PIC ini bertanggung jawab atas ' . $rooms->count() . ' ruangan. Pilih PIC pengganti yang valid sebelum menghapus akun ini.']);
+            }
+            // Pindahkan semua ruangan ke PIC pengganti
+            $user->roomsAsPic()->update(['pic_id' => $replacement->id]);
         }
 
         $name = $user->name;
