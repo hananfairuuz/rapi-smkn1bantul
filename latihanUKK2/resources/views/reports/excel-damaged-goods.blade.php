@@ -9,7 +9,7 @@
                 <x:ExcelWorksheet>
                     <x:Name>Barang Rusak</x:Name>
                     <x:WorksheetOptions>
-                        <x:DisplayGridlines/>
+                        @php echo '<' . 'x:DisplayGridlines/>'; @endphp
                     </x:WorksheetOptions>
                 </x:ExcelWorksheet>
             </x:ExcelWorksheets>

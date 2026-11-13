@@ -9,7 +9,7 @@
                 <x:ExcelWorksheet>
                     <x:Name>Laporan Penggunaan</x:Name>
                     <x:WorksheetOptions>
-                        <x:DisplayGridlines/>
+                        {!! '<x:DisplayGridlines/>' !!}
                     </x:WorksheetOptions>
                 </x:ExcelWorksheet>
             </x:ExcelWorksheets>
