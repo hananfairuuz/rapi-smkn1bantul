@@ -56,8 +56,11 @@ class UserController extends Controller
             'users' => $users->filter(fn ($user) => $user->role?->name === $role),
         ])->filter(fn ($group) => $group['users']->isNotEmpty());
 
-        // Daftar seluruh PIC aktif untuk dropdown pilihan PIC pengganti
-        $allPics = $users->filter(fn ($user) => $user->role?->name === 'pic')->values();
+        // Keep replacement choices independent from the current user search.
+        $allPics = User::with('role')
+            ->whereHas('role', fn ($query) => $query->where('name', 'pic'))
+            ->orderBy('name')
+            ->get();
 
         return view('users.index', compact('roleGroups', 'search', 'allPics'));
     }

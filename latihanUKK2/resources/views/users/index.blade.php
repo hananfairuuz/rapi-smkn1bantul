@@ -124,10 +124,12 @@
         const closeBtn = document.getElementById('picReplaceCloseBtn');
         const cancelBtn = document.getElementById('picReplaceCancelBtn');
 
-        function closeModal() {
+        function closeModal(resetSelection = true) {
             modal.classList.remove('is-open');
-            selectEl.value = '';
-            replacementInput.value = '';
+            if (resetSelection) {
+                selectEl.value = '';
+                replacementInput.value = '';
+            }
         }
 
         closeBtn?.addEventListener('click', closeModal);
@@ -175,7 +177,7 @@
                         }
                         replacementInput.value = selectEl.value;
                         confirmed = true;
-                        closeModal();
+                        closeModal(false);
                         // submit via fetch tidak perlu — form langsung submit
                     };
 

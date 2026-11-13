@@ -320,6 +320,30 @@ class RoleAccessTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
 
+    public function test_admin_can_delete_pic_and_transfer_rooms_to_replacement_with_existing_rooms(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $picToDelete = $this->userWithRole('pic');
+        $replacementPic = $this->userWithRole('pic');
+        $existingRooms = [
+            Room::create(['name' => 'Lab Komputer 1', 'pic_id' => $replacementPic->id]),
+            Room::create(['name' => 'Lab Komputer 2', 'pic_id' => $replacementPic->id]),
+        ];
+        $roomToTransfer = Room::create(['name' => 'Ruang Multimedia', 'pic_id' => $picToDelete->id]);
+
+        $this->actingAs($admin)->delete(route('users.destroy', $picToDelete), [
+            'replacement_pic_id' => $replacementPic->id,
+        ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('users', ['id' => $picToDelete->id]);
+        $this->assertDatabaseHas('rooms', ['id' => $roomToTransfer->id, 'pic_id' => $replacementPic->id]);
+        foreach ($existingRooms as $room) {
+            $this->assertDatabaseHas('rooms', ['id' => $room->id, 'pic_id' => $replacementPic->id]);
+        }
+    }
+
     public function test_admin_cannot_delete_a_user_with_agendas(): void
     {
         $admin = $this->userWithRole('admin');
